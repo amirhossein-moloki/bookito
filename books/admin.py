@@ -8,8 +8,8 @@ from Language.models import Language
 
 class BookAdmin(admin.ModelAdmin):
     list_display = ('title', 'author', 'translator', 'publisher', 'publication_date', 'isbn', 'price', 'stock', 'sold_count', 'rating', 'discount')
-    list_filter = ('author', 'translator', 'publisher', 'genre', 'language', 'publication_date')
-    search_fields = ('title', 'isbn', 'author__name', 'translator__name', 'publisher__name', 'genre__name', 'language__name')
+    list_filter = ('author', 'translator', 'publisher', 'genre', 'language', 'publication_date')  # قسمت __name را بردارید
+    search_fields = ('title', 'isbn', 'author__name', 'translator__name', 'publisher__name', 'genre__name', 'language__name')  # اطمینان حاصل کنید که این‌ها درست هستند
     list_editable = ('price', 'stock', 'rating', 'discount')
     ordering = ('-publication_date',)
 

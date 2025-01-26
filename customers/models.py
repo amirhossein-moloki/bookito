@@ -1,7 +1,12 @@
 from django.db import models
 from accounts.models import User
 from books.models import Book  # وارد کردن مدل Book از اپلیکیشن library
-
+from discounts.models import Discount
+from authors.models import Author
+from publishers.models import Publisher
+from translators.models import Translator
+from genres.models import Genre
+from Language.models import Language
 class Invoice(models.Model):
     customer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="invoices")  # ارتباط با مشتری
     total_price = models.DecimalField(max_digits=10, decimal_places=2)  # قیمت کل خرید
@@ -56,13 +61,13 @@ class Customer(models.Model):
                                 related_name='customers')  # ارتباط با آدرس
 
     # علاقه‌مندی‌ها
-    favorite_genres = models.ManyToManyField('Genre', blank=True,
+    favorite_genres = models.ManyToManyField(Genre, blank=True,
                                              related_name='favorited_by')  # علاقه‌مندی‌ها به ژانرها
-    favorite_authors = models.ManyToManyField('Author', blank=True,
+    favorite_authors = models.ManyToManyField(Author, blank=True,
                                               related_name='favorited_by')  # علاقه‌مندی‌ها به نویسندگان
-    favorite_publishers = models.ManyToManyField('Publisher', blank=True,
+    favorite_publishers = models.ManyToManyField(Publisher, blank=True,
                                                  related_name='favorited_by')  # علاقه‌مندی‌ها به ناشران
-    favorite_translators = models.ManyToManyField('Translator', blank=True,
+    favorite_translators = models.ManyToManyField(Translator, blank=True,
                                                   related_name='favorited_by')  # علاقه‌مندی‌ها به مترجمان
 
     def __str__(self):
@@ -138,12 +143,11 @@ def update_customer_interest(customer, book, quantity=1):
 
 
 class Cart(models.Model):
-    customer = models.OneToOneField('Customer', on_delete=models.CASCADE, related_name='cart')
+    customer = models.OneToOneField(Customer, on_delete=models.CASCADE, related_name='cart')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
-    discount_code = models.ForeignKey('DiscountCode', null=True, blank=True,
-                                      on_delete=models.SET_NULL)  # ارتباط با کد تخفیف
+    discount_code = models.ForeignKey(Discount, null=True, blank=True, on_delete=models.SET_NULL)  # ارتباط با کد تخفیف
     discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)  # مقدار تخفیف اعمال‌شده
 
     def __str__(self):
@@ -172,7 +176,7 @@ class Cart(models.Model):
 
 class CartItem(models.Model):
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='items')
-    book = models.ForeignKey('library.Book', on_delete=models.CASCADE)  # ارجاع به مدل Book در اپلیکیشن library
+    book = models.ForeignKey(Book, on_delete=models.CASCADE)  # ارجاع به مدل Book در اپلیکیشن library
     quantity = models.PositiveIntegerField(default=1)
 
     def __str__(self):
