@@ -44,7 +44,8 @@ INSTALLED_APPS = [
     'discounts',
     'genres',
     'Language',
-    'publishers'
+    'publishers',
+    'translators'
 ]
 
 MIDDLEWARE = [
