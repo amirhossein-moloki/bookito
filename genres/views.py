@@ -1,6 +1,6 @@
 # views.py
 from rest_framework import generics
-from rest_framework.permissions import IsAdminUser
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from .models import Genre
@@ -86,7 +86,7 @@ class GenreRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
 # جستجو در ژانرها بر اساس نام
 class GenreSearchView(generics.ListAPIView):
     serializer_class = GenreSerializer
-    permission_classes = [IsAdminUser]  # فقط ادمین‌ها مجاز به دسترسی هستند
+    permission_classes = [IsAuthenticated]  # فقط ادمین‌ها مجاز به دسترسی هستند
 
     def get_queryset(self):
         query = self.request.query_params.get('query', '')  # دریافت پارامتر جستجو از URL
@@ -100,4 +100,19 @@ class GenreSearchView(generics.ListAPIView):
             return genres
         except Exception as e:
             return Response({"error": f"Error searching genres: {str(e)}"},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+class GenreDetailView(generics.RetrieveAPIView):
+    queryset = Genre.objects.all()
+    serializer_class = GenreSerializer
+    permission_classes = [IsAuthenticated]  # فقط ادمین‌ها مجاز به دسترسی هستند
+
+    def get(self, request, *args, **kwargs):
+        try:
+            genre = self.get_object()  # دریافت ژانر خاص
+            serializer = self.get_serializer(genre)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Genre.DoesNotExist:
+            return Response({"error": "Genre not found"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": f"Error retrieving genre: {str(e)}"},
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
