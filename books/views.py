@@ -83,11 +83,11 @@ class BookFilterView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        books = BookFilter(self.request.GET, queryset=Book.objects.all()).qs
-        if not books.exists():
+        # استفاده از BookFilter برای فیلتر کردن کتاب‌ها
+        filtered_books = BookFilter(self.request.GET, queryset=Book.objects.all()).qs
+        if not filtered_books.exists():
             return Response({"error": "No books found with the specified filters."}, status=status.HTTP_404_NOT_FOUND)
-        return books
-
+        return filtered_books
 
 # 7. BookDiscountView - نمایش کتاب‌ها با تخفیف
 class BookDiscountView(generics.ListAPIView):
