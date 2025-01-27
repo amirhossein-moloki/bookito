@@ -72,3 +72,15 @@ class PublisherSearchView(generics.ListAPIView):
             return Response({"error": "No publishers found matching the query"}, status=status.HTTP_404_NOT_FOUND)
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+class PublisherRetrieveView(generics.RetrieveAPIView):
+    queryset = Publisher.objects.all()
+    serializer_class = PublisherSerializer
+    permission_classes = [IsAdminUser]  # فقط ادمین‌ها مجاز به دسترسی هستند
+
+    def get(self, request, *args, **kwargs):
+        try:
+            publisher = self.get_object()
+            serializer = self.get_serializer(publisher)
+            return Response(serializer.data)
+        except Publisher.DoesNotExist:
+            return Response({"error": "Publisher not found"}, status=status.HTTP_404_NOT_FOUND)
