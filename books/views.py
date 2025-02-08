@@ -15,12 +15,12 @@ class CreateBookView(generics.CreateAPIView):
     def perform_create(self, serializer):
         try:
             serializer.save()
-            return Response({"message": "Book successfully created."}, status=status.HTTP_201_CREATED)
+            return Response({"message": "کتاب با موفقیت ایجاد شد."}, status=status.HTTP_201_CREATED)
         except Exception as e:
-            return Response({"error": f"Error creating book: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": f"خطا در ایجاد کتاب: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
 
 
-# 2. UpdateBookView - آپدیت کتاب
+# 2. UpdateBookView - به‌روزرسانی کتاب
 class UpdateBookView(generics.UpdateAPIView):
     queryset = Book.objects.all()
     serializer_class = BookSerializer
@@ -29,9 +29,9 @@ class UpdateBookView(generics.UpdateAPIView):
     def perform_update(self, serializer):
         try:
             serializer.save()
-            return Response({"message": "Book successfully updated."}, status=status.HTTP_200_OK)
+            return Response({"message": "کتاب با موفقیت به‌روزرسانی شد."}, status=status.HTTP_200_OK)
         except Exception as e:
-            return Response({"error": f"Error updating book: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": f"خطا در به‌روزرسانی کتاب: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 # 3. DeleteBookView - حذف کتاب
@@ -43,9 +43,9 @@ class DeleteBookView(generics.DestroyAPIView):
     def perform_destroy(self, instance):
         try:
             instance.delete()
-            return Response({"message": "Book successfully deleted."}, status=status.HTTP_204_NO_CONTENT)
+            return Response({"message": "کتاب با موفقیت حذف شد."}, status=status.HTTP_204_NO_CONTENT)
         except Exception as e:
-            return Response({"error": f"Error deleting book: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": f"خطا در حذف کتاب: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 # 4. BookListView - نمایش فهرست کتاب‌ها
@@ -57,7 +57,7 @@ class BookListView(generics.ListAPIView):
     def get(self, request, *args, **kwargs):
         books = self.get_queryset()
         if not books.exists():
-            return Response({"error": "No books found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "کتابی یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
         return super().get(request, *args, **kwargs)
 
 
@@ -69,11 +69,11 @@ class BookSearchView(generics.ListAPIView):
     def get_queryset(self):
         query = self.request.query_params.get('query', '')
         if not query:
-            return Response({"error": "Query parameter is required."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "پارامتر جستجو الزامی است."}, status=status.HTTP_400_BAD_REQUEST)
 
         books = Book.objects.filter(title__icontains=query)
         if not books.exists():
-            return Response({"error": "No books found matching the query."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "کتابی مطابق با جستجو یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
         return books
 
 
@@ -86,8 +86,9 @@ class BookFilterView(generics.ListAPIView):
         # استفاده از BookFilter برای فیلتر کردن کتاب‌ها
         filtered_books = BookFilter(self.request.GET, queryset=Book.objects.all()).qs
         if not filtered_books.exists():
-            return Response({"error": "No books found with the specified filters."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "کتابی با فیلترهای مشخص شده یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
         return filtered_books
+
 
 # 7. BookDiscountView - نمایش کتاب‌ها با تخفیف
 class BookDiscountView(generics.ListAPIView):
@@ -99,7 +100,7 @@ class BookDiscountView(generics.ListAPIView):
         max_discount = self.request.query_params.get('max_discount', 100)
         books = Book.objects.filter(discount__gte=min_discount, discount__lte=max_discount)
         if not books.exists():
-            return Response({"error": "No books found with the specified discount range."},
+            return Response({"error": "کتابی در محدوده تخفیف مشخص شده یافت نشد."},
                             status=status.HTTP_404_NOT_FOUND)
         return books
 
@@ -112,7 +113,7 @@ class BookPriceAscView(generics.ListAPIView):
     def get_queryset(self):
         books = Book.objects.all().order_by('price')
         if not books.exists():
-            return Response({"error": "No books available."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "هیچ کتابی موجود نیست."}, status=status.HTTP_404_NOT_FOUND)
         return books
 
 
@@ -124,7 +125,7 @@ class BookPriceDescView(generics.ListAPIView):
     def get_queryset(self):
         books = Book.objects.all().order_by('-price')
         if not books.exists():
-            return Response({"error": "No books available."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "هیچ کتابی موجود نیست."}, status=status.HTTP_404_NOT_FOUND)
         return books
 
 
@@ -137,6 +138,9 @@ class BookDetailView(generics.RetrieveAPIView):
     def get(self, request, *args, **kwargs):
         try:
             book = self.get_object()
-            return Response({"message": "Book details retrieved successfully.", "data": BookSerializer(book).data})
+            return Response({
+                "message": "جزئیات کتاب با موفقیت دریافت شد.",
+                "data": BookSerializer(book).data
+            })
         except Book.DoesNotExist:
-            return Response({"error": "Book not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "کتاب یافت نشد."}, status=status.HTTP_404_NOT_FOUND)

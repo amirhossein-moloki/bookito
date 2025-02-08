@@ -13,7 +13,7 @@ class InvoiceAdmin(admin.ModelAdmin):
 
 class AddressAdmin(admin.ModelAdmin):
     list_display = ('province', 'city', 'street_address', 'house_number', 'postal_code')
-    search_fields = ('province', 'city', 'street_address')
+    search_fields = ('province', 'city', 'street_address', 'house_number', 'postal_code')
 
 class CustomerAdmin(admin.ModelAdmin):
     list_display = ('user', 'full_name', 'phone_number', 'email', 'is_active', 'registration_date')

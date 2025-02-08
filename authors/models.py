@@ -1,6 +1,7 @@
 from django.db import models
 from Language.models import Language
 from genres.models import Genre
+from datetime import datetime
 class Author(models.Model):
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
@@ -21,3 +22,10 @@ class Author(models.Model):
 
     def __str__(self):
         return f'{self.first_name} {self.last_name}'
+
+    # تابع برای تبدیل تاریخ
+    def parse_date(date_string):
+        return datetime.strptime(date_string, "%Y-%m-%d").date()
+
+
+

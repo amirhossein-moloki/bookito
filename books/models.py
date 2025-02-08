@@ -7,32 +7,38 @@ from Language.models import Language
 
 class Book(models.Model):
     title = models.CharField(max_length=255)  # عنوان کتاب
-    author = models.ForeignKey(Author, on_delete=models.SET_NULL, null=True, blank=True)  # ارتباط با نویسنده
-    translator = models.ForeignKey(Translator, on_delete=models.SET_NULL, null=True, blank=True)  # ارتباط با مترجم
+    authors = models.ManyToManyField(Author, blank=True)  # ارتباط چند به چند با نویسنده
+    translators = models.ManyToManyField(Translator, blank=True)  # ارتباط چند به چند با مترجم
     publisher = models.ForeignKey(Publisher, on_delete=models.SET_NULL, null=True, blank=True)  # ارتباط با ناشر
     publication_date = models.DateField(null=True, blank=True)  # تاریخ انتشار
     isbn = models.CharField(max_length=13, unique=True, null=True, blank=True)  # شماره استاندارد بین‌المللی کتاب
     price = models.DecimalField(max_digits=10, decimal_places=2)  # قیمت کتاب
     summary = models.TextField(null=True, blank=True)  # خلاصه کتاب
-    genre = models.ForeignKey(Genre, on_delete=models.SET_NULL, null=True, blank=True)  # ارتباط با ژانر کتاب
+    genres = models.ManyToManyField(Genre, blank=True)  # ارتباط چند به چند با ژانر کتاب
     language = models.ForeignKey(Language, on_delete=models.SET_NULL, null=True, blank=True)  # ارتباط با زبان کتاب
     page_count = models.IntegerField(null=True, blank=True)  # تعداد صفحات کتاب
+    cover_type = models.CharField(max_length=255, null=True, blank=True)
     cover_image = models.ImageField(upload_to='books/covers/', null=True, blank=True)  # تصویر جلد کتاب
     stock = models.IntegerField(default=0)  # تعداد موجودی کتاب
     sold_count = models.IntegerField(default=0)  # تعداد فروخته‌شده
     rating = models.DecimalField(max_digits=3, decimal_places=2, null=True, blank=True)  # امتیاز کتاب (اختیاری)
     discount = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  # درصد تخفیف (اختیاری)
+    weight = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  # وزن کتاب به کیلوگرم
 
     def __str__(self):
         return self.title
 
     @classmethod
     def get_books_by_genre(cls, genre_name):
-        return cls.objects.filter(genre__name=genre_name)
+        return cls.objects.filter(genres__name=genre_name)
+
+    @classmethod
+    def get_books_by_author(cls, author_name):
+        return cls.objects.filter(authors__name=author_name)
 
     @classmethod
     def get_books_by_translator(cls, translator_name):
-        return cls.objects.filter(translator__name=translator_name)
+        return cls.objects.filter(translators__name=translator_name)
 
     @classmethod
     def get_books_by_publisher(cls, publisher_name):
@@ -57,3 +63,12 @@ class Book(models.Model):
     @classmethod
     def get_books_in_stock(cls):
         return cls.objects.filter(stock__gt=0)
+
+
+
+class Category(models.Model):
+    name = models.CharField(max_length=255, unique=True)  # نام دسته‌بندی
+    books = models.ManyToManyField('Book', related_name='categories', blank=True)  # ارتباط چند به چند با کتاب‌ها
+
+    def __str__(self):
+        return self.name

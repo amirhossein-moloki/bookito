@@ -1,43 +1,45 @@
 from rest_framework import serializers
-from models import  Book
+from .models import Book
 from authors.serializers import AuthorSerializer
 from publishers.serializers import PublisherSerializer
 from translators.serializers import TranslatorSerializer
 from genres.serializers import GenreSerializer
 from Language.serializers import LanguageSerializer
 
-class BookSerializer(serializers.serializerserializer):
-    author = AuthorSerializer()  # استفاده از سریالایزر Author
-    translator = TranslatorSerializer()  # استفاده از سریالایزر Translator
-    publisher = PublisherSerializer()  # استفاده از سریالایزر Publisher
-    genre = GenreSerializer()  # استفاده از سریالایزر Genre
-    language = LanguageSerializer()  # استفاده از سریالایزر Language
+class BookSerializer(serializers.ModelSerializer):
+    authors = AuthorSerializer(many=True)  # استفاده از authors به‌صورت لیست
+    translators = TranslatorSerializer(many=True)  # استفاده از translators به‌صورت لیست
+    publisher = PublisherSerializer()  # نگه داشتن publisher به‌صورت تک‌مقداری
+    genres = GenreSerializer(many=True)  # استفاده از genres به‌صورت لیست
+    language = LanguageSerializer()  # استفاده از language به‌صورت تک‌مقداری
 
     class Meta:
         model = Book
         fields = [
             'id',
             'title',
-            'author',
-            'translator',
+            'authors',
+            'translators',
             'publisher',
             'publication_date',
             'isbn',
             'price',
             'summary',
-            'genre',
+            'genres',
             'language',
             'page_count',
+            'cover_type',
             'cover_image',
             'stock',
             'sold_count',
             'rating',
             'discount',
+            'weight',  # اضافه کردن وزن کتاب
         ]
-        read_only_fields = ['id', 'sold_count', 'rating', 'stock']  # فیلدهای فقط خواندنی
+        read_only_fields = ['id', 'sold_count', 'rating', 'stock']
 
     def validate_isbn(self, value):
-        if len(value) != 13:
+        if value and len(value) != 13:
             raise serializers.ValidationError("ISBN must be exactly 13 characters.")
         return value
 
