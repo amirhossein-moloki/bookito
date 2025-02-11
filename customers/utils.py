@@ -73,5 +73,58 @@ class CalculatePostexShippingView(APIView):
 
         return Response({"shipping_cost": cost}, status=status.HTTP_200_OK)
 
-def calculate_shipping_cost():
-    return 0  # مقدار پیش‌فرض تا وقتی که نحوه محاسبه را مشخص کنید
+import requests
+
+def calculate_shipping_cost(from_city_code, to_city_code, cart_total, cart_weight, api_key):
+    url = "https://api.postex.ir/api/v1/shipping/quotes"
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {api_key}"  # کلید API برای احراز هویت
+    }
+
+    data = {
+        "from_city_code": from_city_code,
+        "pickup_needed": True,
+        "courier": {
+            "courier_code": "POSTEX",
+            "service_type": "STANDARD"
+        },
+        "parcels": [
+            {
+                "custom_parcel_id": "123456",
+                "to_city_code": to_city_code,
+                "payment_type": "PREPAID",  # پرداخت آنلاین
+                "parcel_properties": {
+                    "length": 30,  # مقدار پیش‌فرض (قابل تغییر)
+                    "width": 20,
+                    "height": 15,
+                    "total_weight": cart_weight,
+                    "is_fragile": False,
+                    "is_liquid": False,
+                    "total_value": cart_total,
+                    "pre_paid_amount": cart_total,
+                    "total_value_currency": "IRR",
+                    "box_type_id": 1
+                }
+            }
+        ],
+        "value_added_service": {
+            "request_packaging": True,
+            "request_sms_notification": True,
+            "request_email_notification": True
+        }
+    }
+
+    response = requests.post(url, json=data, headers=headers)
+
+    if response.status_code == 200:
+        shipping_info = response.json()
+        return shipping_info  # برگرداندن اطلاعات هزینه ارسال از API
+    else:
+        return {"error": response.status_code, "message": response.text}
+
+# استفاده از تابع
+api_key = "your_api_key_here"
+shipping_cost = calculate_shipping_cost(1001, 2002, 450000, 2, api_key)
+print(shipping_cost)
+

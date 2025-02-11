@@ -9,10 +9,10 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from books.models import Book
-from .models import Cart, CartItem, Discount, Invoice, InvoiceItem, Address
 from .serializers import CartItemSerializer
 from .utils import calculate_shipping_cost  # فرض بر این است که این تابع در utils تعریف شده است
-from .models import Cart, CartItem, Invoice
+from .models import Cart, CartItem, Invoice,Cart, CartItem, Discount, Invoice, InvoiceItem, Address,Customer
+import requests
 # تنظیمات زرین پال
 MERCHANT_ID = getattr(settings, 'ZARINPAL_MERCHANT_ID', None)
 ZARINPAL_API_URL = 'https://api.zarinpal.com/pg/rest/WebGate/'
@@ -150,22 +150,66 @@ class ApplyDiscountView(CustomerMixin, View):
         return redirect('cart_detail')
 
 
-class CalculateShippingView(CustomerMixin, APIView):
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from django.shortcuts import get_object_or_404
+from .models import Address, Customer, Invoice
+from .utils import calculate_shipping_cost
+
+class CalculateShippingView(APIView):
     """
-    محاسبه هزینه پست بر اساس وزن و آدرس مشتری
+    محاسبه هزینه پست و ذخیره در فاکتور
     """
+
     def get(self, request, *args, **kwargs):
-        cart = self.customer.cart
+        user = request.user
+        customer = get_object_or_404(Customer, user=user)
+
+        # دریافت سبد خرید کاربر
+        cart = customer.cart
+
         if not cart.items.exists():
             return Response({"error": "Your cart is empty."}, status=400)
+
         total_weight = cart.get_total_weight()
+        total_price = cart.get_total_price()
 
-        address = getattr(self.customer, 'address', None)
-        if not address:
-            return Response({"error": "No address found for the customer."}, status=400)
+        # دریافت آدرس
+        address_id = request.query_params.get("address_id")
+        if not address_id:
+            return Response({"error": "Address ID is required."}, status=400)
 
-        shipping_cost = calculate_shipping_cost(total_weight, address)
-        return Response({"shipping_cost": str(shipping_cost)}, status=status.HTTP_200_OK)
+        address = get_object_or_404(Address, id=address_id, customer=customer)
+        to_city_code = address.city_code
+
+        # محاسبه هزینه ارسال
+        api_key = "your_api_key_here"
+        shipping_cost = calculate_shipping_cost(
+            from_city_code=1001,
+            to_city_code=to_city_code,
+            cart_total=total_price,
+            cart_weight=total_weight,
+            api_key=api_key
+        )
+
+        # بررسی وجود فاکتور پرداخت‌نشده برای این کاربر
+        invoice, created = Invoice.objects.get_or_create(
+            customer=customer,
+            paid=False,  # فاکتورهای پرداخت نشده را بررسی می‌کنیم
+            defaults={"total_price": total_price, "shipping_cost": shipping_cost}
+        )
+
+        # اگر فاکتور قبلاً وجود داشت، فقط هزینه ارسال را به‌روزرسانی کنیم
+        if not created:
+            invoice.shipping_cost = shipping_cost
+            invoice.total_price = total_price
+            invoice.save()
+
+        return Response({
+            "shipping_cost": shipping_cost,
+            "total_with_shipping": invoice.get_total_with_shipping()
+        }, status=status.HTTP_200_OK)
 
 
 # -------------------------------
