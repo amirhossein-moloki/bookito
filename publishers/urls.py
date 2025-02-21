@@ -3,11 +3,11 @@ from .views import PublisherListCreateView, PublisherRetrieveUpdateDestroyView, 
 
 urlpatterns = [
     # لیست و ایجاد انتشارات جدید
-    path('publishers/', PublisherListCreateView.as_view(), name='publisher-list-create'),
+    path('', PublisherListCreateView.as_view(), name='publisher-list-create'),
 
     # دریافت، بروزرسانی و حذف یک انتشارات خاص
-    path('publishers/<int:pk>/', PublisherRetrieveUpdateDestroyView.as_view(), name='publisher-retrieve-update-destroy'),
+    path('<int:pk>/', PublisherRetrieveUpdateDestroyView.as_view(), name='publisher-retrieve-update-destroy'),
 
     # جستجو بر اساس نام انتشارات
-    path('publishers/search/', PublisherSearchView.as_view(), name='publisher-search'),
+    path('search/', PublisherSearchView.as_view(), name='publisher-search'),
 ]
