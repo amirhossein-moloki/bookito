@@ -8,11 +8,18 @@ from .serializers import LanguageSerializer
 class LanguageListCreateAPIView(generics.ListCreateAPIView):
     queryset = Language.objects.all()
     serializer_class = LanguageSerializer
-    permission_classes = [IsAuthenticated, IsAdminUser]  # فقط ادمین‌ها می‌توانند زبان‌ها را ایجاد یا لیست کنند
+    permission_classes = [IsAuthenticated]  # همه کاربران می‌توانند زبان‌ها را لیست کنند، اما فقط ادمین‌ها می‌توانند ایجاد کنند
+
+    def perform_create(self, serializer):
+        if self.request.user.is_authenticated and self.request.user.is_staff:
+            serializer.save()  # فقط ادمین‌ها می‌توانند زبان ایجاد کنند
+        else:
+            raise PermissionDenied("You do not have permission to perform this action.")
 
     def create(self, request, *args, **kwargs):
-        response = super().create(request, *args, **kwargs)
-        return Response({"پیام": "زبان با موفقیت ایجاد شد", "داده‌ها": response.data}, status=response.status_code)
+        if not request.user.is_staff:
+            return Response({"پیام": "شما اجازه ایجاد زبان را ندارید"}, status=status.HTTP_403_FORBIDDEN)
+        return super().create(request, *args, **kwargs)
 
     def list(self, request, *args, **kwargs):
         response = super().list(request, *args, **kwargs)
@@ -30,10 +37,14 @@ class LanguageRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView
         return Response({"پیام": "اطلاعات زبان دریافت شد", "داده‌ها": response.data}, status=response.status_code)
 
     def update(self, request, *args, **kwargs):
+        if not request.user.is_staff:
+            return Response({"پیام": "شما اجازه به‌روزرسانی زبان را ندارید"}, status=status.HTTP_403_FORBIDDEN)
         response = super().update(request, *args, **kwargs)
         return Response({"پیام": "زبان با موفقیت به‌روزرسانی شد", "داده‌ها": response.data}, status=response.status_code)
 
     def destroy(self, request, *args, **kwargs):
+        if not request.user.is_staff:
+            return Response({"پیام": "شما اجازه حذف زبان را ندارید"}, status=status.HTTP_403_FORBIDDEN)
         super().destroy(request, *args, **kwargs)
         return Response({"پیام": "زبان با موفقیت حذف شد"}, status=status.HTTP_204_NO_CONTENT)
 
@@ -41,7 +52,7 @@ class LanguageRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView
 # ویو برای جستجو بر اساس نام زبان
 class LanguageSearchAPIView(generics.ListAPIView):
     serializer_class = LanguageSerializer
-    permission_classes = [IsAuthenticated, IsAdminUser]  # فقط ادمین‌ها می‌توانند جستجو کنند
+    permission_classes = [IsAuthenticated]  # همه کاربران می‌توانند جستجو کنند
 
     def get_queryset(self):
         query = self.request.query_params.get('query', '')
@@ -57,9 +68,9 @@ class LanguageSearchAPIView(generics.ListAPIView):
         return Response({"پیام": "نتایج جستجو", "داده‌ها": response.data}, status=response.status_code)
 
 
-
+# ویو برای مشاهده اطلاعات زبان‌ها
 class LanguageRetrieveAPIView(generics.RetrieveAPIView):
     queryset = Language.objects.all()
     serializer_class = LanguageSerializer
-    permission_classes = [IsAuthenticated, IsAdminUser]  # فقط ادمین‌ها می‌توانند اطلاعات زبان‌ها را مشاهده کنند
+    permission_classes = [IsAuthenticated]  # همه کاربران می‌توانند اطلاعات زبان‌ها را مشاهده کنند
     lookup_field = 'pk'  # استفاده از pk به عنوان شناسه برای جستجو
