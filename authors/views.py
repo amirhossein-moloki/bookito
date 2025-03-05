@@ -6,113 +6,113 @@ from .serializers import AuthorSerializer
 from genres.models import Genre
 from Language.models import Language
 
-# View for listing authors
+# ویو برای لیست نویسندگان
 class AuthorListView(generics.ListAPIView):
-    queryset = Author.objects.all()  # Get all authors
+    queryset = Author.objects.all()  # دریافت تمام نویسندگان
     serializer_class = AuthorSerializer
-    permission_classes = []  # All users can access this view
+    permission_classes = []  # تمام کاربران می‌توانند به این ویو دسترسی داشته باشند
 
     def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()  # Get all authors
+        queryset = self.get_queryset()  # دریافت تمام نویسندگان
         if not queryset:
-            return Response({"error": "No authors found."}, status=status.HTTP_404_NOT_FOUND)
-        serializer = self.get_serializer(queryset, many=True)  # Serialize authors
-        return Response({"success": "Authors retrieved successfully.", "data": serializer.data})
+            return Response({"error": "هیچ نویسنده‌ای پیدا نشد."}, status=status.HTTP_404_NOT_FOUND)
+        serializer = self.get_serializer(queryset, many=True)  # سریالیز کردن نویسندگان
+        return Response({"success": "نویسندگان با موفقیت دریافت شدند.", "data": serializer.data})
 
-# View for retrieving a single author by ID
+# ویو برای دریافت یک نویسنده با استفاده از ID
 class AuthorRetrieveView(generics.RetrieveAPIView):
-    queryset = Author.objects.all()  # Get all authors
+    queryset = Author.objects.all()  # دریافت تمام نویسندگان
     serializer_class = AuthorSerializer
-    permission_classes = []  # All users can access this view
+    permission_classes = []  # تمام کاربران می‌توانند به این ویو دسترسی داشته باشند
 
     def retrieve(self, request, *args, **kwargs):
         try:
-            author = self.get_object()  # Get author by ID
-            serializer = self.get_serializer(author)  # Serialize the author
-            return Response({"success": "Author retrieved successfully.", "data": serializer.data})
+            author = self.get_object()  # دریافت نویسنده بر اساس ID
+            serializer = self.get_serializer(author)  # سریالیز کردن نویسنده
+            return Response({"success": "نویسنده با موفقیت دریافت شد.", "data": serializer.data})
         except Author.DoesNotExist:
-            return Response({"error": "Author not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "نویسنده پیدا نشد."}, status=status.HTTP_404_NOT_FOUND)
 
-# View for filtering authors by genre, language, and name
+# ویو برای فیلتر کردن نویسندگان بر اساس ژانر، زبان و نام
 class AuthorFilterView(generics.ListAPIView):
     serializer_class = AuthorSerializer
-    permission_classes = []  # All users can access this view
+    permission_classes = []  # تمام کاربران می‌توانند به این ویو دسترسی داشته باشند
 
     def get_queryset(self):
-        queryset = Author.objects.all()  # Get all authors
+        queryset = Author.objects.all()  # دریافت تمام نویسندگان
 
-        # Filter by genre
+        # فیلتر بر اساس ژانر
         genre_ids = self.request.query_params.get('genre', None)
         if genre_ids:
-            genre_ids = genre_ids.split(',')  # Split genres by ',' and convert to list
+            genre_ids = genre_ids.split(',')  # تقسیم ژانرها بر اساس ',' و تبدیل به لیست
             queryset = queryset.filter(genres__id__in=genre_ids)
 
-        # Filter by language
+        # فیلتر بر اساس زبان
         language_ids = self.request.query_params.get('language', None)
         if language_ids:
-            language_ids = language_ids.split(',')  # Split languages by ',' and convert to list
+            language_ids = language_ids.split(',')  # تقسیم زبان‌ها بر اساس ',' و تبدیل به لیست
             queryset = queryset.filter(languages__id__in=language_ids)
 
-        # Search by name
+        # جستجو بر اساس نام
         name_query = self.request.query_params.get('name', None)
         if name_query:
             queryset = queryset.filter(first_name__icontains=name_query) | queryset.filter(last_name__icontains=name_query)
 
         if not queryset:
-            return Response({"error": "No authors found with the specified filters."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "هیچ نویسنده‌ای با فیلترهای مشخص شده پیدا نشد."}, status=status.HTTP_404_NOT_FOUND)
 
         return queryset
 
-# View for searching authors by name
+# ویو برای جستجوی نویسندگان بر اساس نام
 class AuthorSearchView(generics.ListAPIView):
     serializer_class = AuthorSerializer
-    permission_classes = []  # All users can access this view
+    permission_classes = []  # تمام کاربران می‌توانند به این ویو دسترسی داشته باشند
 
     def get_queryset(self):
-        query = self.request.query_params.get('query', '')  # Get search parameter
+        query = self.request.query_params.get('query', '')  # دریافت پارامتر جستجو
         if query:
             queryset = Author.objects.filter(first_name__icontains=query) | Author.objects.filter(last_name__icontains=query)
             if not queryset:
-                return Response({"error": "No authors found with the provided name."}, status=status.HTTP_404_NOT_FOUND)
+                return Response({"error": "هیچ نویسنده‌ای با نام داده شده پیدا نشد."}, status=status.HTTP_404_NOT_FOUND)
             return queryset
         return Author.objects.none()
 
-# View for creating a new author (Only for admins)
+# ویو برای ایجاد نویسنده جدید (فقط برای ادمین‌ها)
 class AuthorCreateView(generics.CreateAPIView):
-    queryset = Author.objects.all()  # Get all authors
+    queryset = Author.objects.all()  # دریافت تمام نویسندگان
     serializer_class = AuthorSerializer
-    permission_classes = [IsAdminUser]  # Only admins can create authors
+    permission_classes = [IsAdminUser]  # فقط ادمین‌ها می‌توانند نویسنده ایجاد کنند
 
     def create(self, request, *args, **kwargs):
         try:
             return super().create(request, *args, **kwargs)
         except Exception as e:
-            return Response({"error": f"Error creating author: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": f"خطا در ایجاد نویسنده: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
 
-# View for updating an author's details (Only for admins)
+# ویو برای به‌روزرسانی جزئیات یک نویسنده (فقط برای ادمین‌ها)
 class AuthorUpdateView(generics.UpdateAPIView):
-    queryset = Author.objects.all()  # Get all authors
+    queryset = Author.objects.all()  # دریافت تمام نویسندگان
     serializer_class = AuthorSerializer
-    permission_classes = [IsAdminUser]  # Only admins can update authors
+    permission_classes = [IsAdminUser]  # فقط ادمین‌ها می‌توانند نویسنده را به‌روزرسانی کنند
 
     def update(self, request, *args, **kwargs):
         try:
             return super().update(request, *args, **kwargs)
         except Author.DoesNotExist:
-            return Response({"error": "Author not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "نویسنده پیدا نشد."}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
-            return Response({"error": f"Error updating author: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": f"خطا در به‌روزرسانی نویسنده: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
 
-# View for deleting an author (Only for admins)
+# ویو برای حذف یک نویسنده (فقط برای ادمین‌ها)
 class AuthorDeleteView(generics.DestroyAPIView):
-    queryset = Author.objects.all()  # Get all authors
+    queryset = Author.objects.all()  # دریافت تمام نویسندگان
     serializer_class = AuthorSerializer
-    permission_classes = [IsAdminUser]  # Only admins can delete authors
+    permission_classes = [IsAdminUser]  # فقط ادمین‌ها می‌توانند نویسنده را حذف کنند
 
     def destroy(self, request, *args, **kwargs):
         try:
             return super().destroy(request, *args, **kwargs)
         except Author.DoesNotExist:
-            return Response({"error": "Author not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "نویسنده پیدا نشد."}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
-            return Response({"error": f"Error deleting author: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": f"خطا در حذف نویسنده: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
