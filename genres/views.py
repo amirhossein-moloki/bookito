@@ -1,19 +1,21 @@
-# views.py
 from rest_framework import generics
-from rest_framework.permissions import IsAdminUser, IsAuthenticated
+from rest_framework.permissions import IsAdminUser, IsAuthenticated,AllowAny
 from rest_framework.response import Response
 from rest_framework import status
 from .models import Genre
 from .serializers import GenreSerializer
+from rest_framework.exceptions import PermissionDenied
 
 
 # ایجاد و دریافت تمام ژانرها
 class GenreListCreateView(generics.ListCreateAPIView):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    permission_classes = [IsAdminUser]  # فقط ادمین‌ها مجاز به دسترسی هستند
+    permission_classes = [AllowAny]  # همه کاربران می‌توانند لیست را مشاهده کنند
 
     def perform_create(self, serializer):
+        if not self.request.user.is_staff:  # فقط ادمین‌ها می‌توانند ژانر جدید ایجاد کنند
+            raise PermissionDenied("You do not have permission to create a genre.")
         try:
             serializer.save()  # ایجاد رکورد جدید
         except Exception as e:
@@ -31,6 +33,9 @@ class GenreListCreateView(generics.ListCreateAPIView):
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def post(self, request, *args, **kwargs):
+        if not self.request.user.is_staff:  # فقط ادمین‌ها می‌توانند ژانر ایجاد کنند
+            raise PermissionDenied("You do not have permission to create a genre.")
+
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             try:
@@ -45,11 +50,11 @@ class GenreListCreateView(generics.ListCreateAPIView):
 class GenreRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    permission_classes = [IsAdminUser]  # فقط ادمین‌ها مجاز به دسترسی هستند
+    permission_classes = [IsAdminUser]  # فقط ادمین‌ها می‌توانند دسترسی به این ویو داشته باشند
 
     def get(self, request, *args, **kwargs):
         try:
-            genre = self.get_object()
+            genre = self.get_object()  # دریافت ژانر خاص
             serializer = self.get_serializer(genre)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Genre.DoesNotExist:
@@ -86,7 +91,7 @@ class GenreRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
 # جستجو در ژانرها بر اساس نام
 class GenreSearchView(generics.ListAPIView):
     serializer_class = GenreSerializer
-    permission_classes = [IsAuthenticated]  # فقط ادمین‌ها مجاز به دسترسی هستند
+    permission_classes = [AllowAny]  # همه کاربران می‌توانند جستجو کنند
 
     def get_queryset(self):
         query = self.request.query_params.get('query', '')  # دریافت پارامتر جستجو از URL
@@ -101,10 +106,13 @@ class GenreSearchView(generics.ListAPIView):
         except Exception as e:
             return Response({"error": f"Error searching genres: {str(e)}"},
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# دریافت جزئیات یک ژانر
 class GenreDetailView(generics.RetrieveAPIView):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    permission_classes = [IsAuthenticated]  # فقط ادمین‌ها مجاز به دسترسی هستند
+    permission_classes = [AllowAny]  # همه کاربران می‌توانند جزئیات ژانر را مشاهده کنند
 
     def get(self, request, *args, **kwargs):
         try:
