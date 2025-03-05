@@ -36,7 +36,7 @@ urlpatterns = [
     path('publishers/', include('publishers.urls')),
 
     path('translators/', include('translators.urls')),
-    path('address/', include('customers.AddressUrls')),
+    path('address/', include('address.urls')),
 
     # URL برای نمایش Swagger
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),

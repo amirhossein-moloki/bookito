@@ -11,10 +11,6 @@ class InvoiceAdmin(admin.ModelAdmin):
     search_fields = ('customer__username', 'id')
     inlines = [InvoiceItemInline]
 
-class AddressAdmin(admin.ModelAdmin):
-    list_display = ('province', 'city', 'street_address', 'house_number', 'postal_code')
-    search_fields = ('province', 'city', 'street_address', 'house_number', 'postal_code')
-
 class CustomerAdmin(admin.ModelAdmin):
     list_display = ('user', 'full_name', 'phone_number', 'email', 'is_active', 'registration_date')
     list_filter = ('is_active', 'registration_date')
@@ -39,7 +35,6 @@ class CartItemAdmin(admin.ModelAdmin):
 
 # ثبت مدل‌ها در صفحه ادمین
 admin.site.register(Invoice, InvoiceAdmin)
-admin.site.register(Address, AddressAdmin)
 admin.site.register(Customer, CustomerAdmin)
 admin.site.register(CustomerInterest, CustomerInterestAdmin)
 admin.site.register(Cart, CartAdmin)

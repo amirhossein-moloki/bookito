@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Invoice, InvoiceItem, Address, Customer, CustomerInterest, Cart, CartItem
+from .models import Invoice, InvoiceItem, Customer, CustomerInterest, Cart, CartItem
 from books.serializers import BookSerializer
 from authors.serializers import AuthorSerializer
 from publishers.serializers import PublisherSerializer
@@ -7,16 +7,7 @@ from translators.serializers import TranslatorSerializer
 from genres.serializers import GenreSerializer
 from discounts.serializers import DiscountSerializer
 from accounts.serializers import UserSerializer
-
-
-class AddressSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Address
-        fields = ['id', 'province', 'province_code', 'city', 'city_code', 'street_address', 'house_number', 'postal_code', 'floor', 'unit_number', 'residence_type']
-
-
-
-
+from address.serializers import AddressSerializer
 
 class InvoiceItemSerializer(serializers.ModelSerializer):
     book = BookSerializer()

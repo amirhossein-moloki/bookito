@@ -1,5 +1,5 @@
 from django.urls import path
-from .AddressViews import AddressViewSet
+from .views import AddressViewSet
 
 address_list = AddressViewSet.as_view({
     'get': 'list',  # دریافت لیست آدرس‌ها

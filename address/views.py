@@ -3,8 +3,10 @@ from rest_framework import viewsets, permissions
 from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
-from .models import Address, Customer
+from customers.models import Customer
+from .models import Address
 from .serializers import AddressSerializer
+
 
 YOUR_API_KEY = 'postex_5ea5656aa6014bcROOGfLeIN9rQY6uZTXehFd95hQyB2Z'
 
