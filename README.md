@@ -1,7 +1,3 @@
-Here’s the improved and more visually appealing version of the project description in English:
-
----
-
 # **Online Bookstore (Bookito)**
 
 This project is an **Online Bookstore** built using **Django** and **Django REST Framework**. The source code for this project is open to the public, and you can submit a **Pull Request** to contribute changes.
