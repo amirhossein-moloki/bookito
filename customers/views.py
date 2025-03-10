@@ -15,7 +15,7 @@ from .models import Cart, CartItem, Invoice,Cart, CartItem, Discount, Invoice, I
 import requests
 # تنظیمات زرین پال
 MERCHANT_ID = getattr(settings, 'ZARINPAL_MERCHANT_ID', None)
-ZARINPAL_API_URL = 'https://api.zarinpal.com/pg/rest/WebGate/'
+ZARINPAL_API_URL = 'ZARINPAL_API_URL'
 
 # بررسی وجود تنظیمات زرین پال
 if MERCHANT_ID is None:

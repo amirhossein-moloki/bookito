@@ -8,7 +8,7 @@ from .models import Address
 from .serializers import AddressSerializer
 
 
-YOUR_API_KEY = 'postex_5ea5656aa6014bcROOGfLeIN9rQY6uZTXehFd95hQyB2Z'
+YOUR_API_KEY = 'API_KEY'
 
 class AddressViewSet(viewsets.ModelViewSet):
     """
