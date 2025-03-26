@@ -1,47 +1,29 @@
-from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate, login
 from django.core.mail import send_mail
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
-from django.utils.encoding import force_str
+from django.utils.encoding import force_str, force_bytes
 from .models import User
-from django.http import Http404
+from django.http import Http404, HttpResponse
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from .serializers import UserSerializer, LoginSerializer, RegisterSerializer
 from django.contrib.auth.forms import PasswordResetForm
 from django_ratelimit.decorators import ratelimit
 from django.template.loader import render_to_string
 import logging
-from django.contrib.auth import login
 import random
 import string
 from django.utils import timezone
-from datetime import timedelta
-from rest_framework.permissions import AllowAny
-from rest_framework.decorators import api_view, permission_classes
-logger = logging.getLogger(__name__)
-from django.utils.encoding import force_bytes
-from rest_framework_simplejwt.tokens import AccessToken
-from rest_framework_simplejwt.tokens import RefreshToken
+from datetime import timedelta, datetime
 from rest_framework_simplejwt.exceptions import TokenError
-from rest_framework import status
-from datetime import datetime, timezone, timedelta
-from django.utils import timezone
-from datetime import timedelta
-import string
-import random
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
-from django.core.mail import send_mail
-from django.template.loader import render_to_string
-from django.contrib.auth import authenticate
-from .serializers import LoginSerializer
-from django.http import HttpResponse
+from rest_framework.decorators import api_view, permission_classes
+
+logger = logging.getLogger(__name__)
 
 
 class RegisterAPIView(APIView):
@@ -105,17 +87,7 @@ class RegisterAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-from django.utils import timezone
-from datetime import timedelta
-import string
-import random
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
-from django.core.mail import send_mail
-from django.template.loader import render_to_string
-from django.contrib.auth import authenticate
-from .serializers import LoginSerializer
+
 
 class LoginAPIView(APIView):
     permission_classes = [AllowAny]
