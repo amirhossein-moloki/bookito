@@ -12,7 +12,7 @@ class Book(models.Model):
     publisher = models.ForeignKey(Publisher, on_delete=models.SET_NULL, null=True, blank=True)  # ارتباط با ناشر
     publication_date = models.DateField(null=True, blank=True)  # تاریخ انتشار
     isbn = models.CharField(max_length=13, unique=True, null=True, blank=True)  # شماره استاندارد بین‌المللی کتاب
-    price = models.DecimalField(max_digits=10, decimal_places=2)  # قیمت کتاب
+    price = models.DecimalField(max_digits=15, decimal_places=0)
     summary = models.TextField(null=True, blank=True)  # خلاصه کتاب
     genres = models.ManyToManyField(Genre, blank=True)  # ارتباط چند به چند با ژانر کتاب
     language = models.ForeignKey(Language, on_delete=models.SET_NULL, null=True, blank=True)  # ارتباط با زبان کتاب
