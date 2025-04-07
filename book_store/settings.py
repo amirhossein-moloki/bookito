@@ -7,7 +7,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Security settings
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'your-secure-key')
-DEBUG = os.getenv('DJANGO_DEBUG', 'True') == 'True'  # قابلیت تغییر از محیط
+DEBUG = os.getenv('DJANGO_DEBUG', 'false') == 'false'  # قابلیت تغییر از محیط
 
 ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
@@ -93,12 +93,12 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
             ],
-        },
+        },  
     },
 ]
 
 # CORS settings
-CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', 'http://127.0.0.1:5500,http://localhost:3000,http://localhost:8000').split(',')
+CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', 'http://127.0.0.1:5503').split(',')            
 CORS_ALLOW_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
 
 # Zarinpal Merchant ID
@@ -126,8 +126,8 @@ REST_FRAMEWORK = {
         'rest_framework.throttling.AnonRateThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'user': '100/day',
-        'anon': '10/minute',
+        'user': '300/day',
+        'anon': '30/minute',
     },
 }
 
