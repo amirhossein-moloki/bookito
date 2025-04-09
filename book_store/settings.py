@@ -98,7 +98,11 @@ TEMPLATES = [
 ]
 
 # CORS settings
+<<<<<<< HEAD
 CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', 'http://127.0.0.1:5503').split(',')            
+=======
+CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', 'http://127.0.0.1:5503,http://localhost:3000,http://localhost:8000').split(',')
+>>>>>>> 952340972390490024cfb3364947f481735c1683
 CORS_ALLOW_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
 
 # Zarinpal Merchant ID
