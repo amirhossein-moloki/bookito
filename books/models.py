@@ -20,9 +20,9 @@ class Book(models.Model):
     cover_type = models.CharField(max_length=255, null=True, blank=True)
     cover_image = models.ImageField(upload_to='books/covers/', null=True, blank=True)  # تصویر جلد کتاب
     stock = models.IntegerField(default=0)  # تعداد موجودی کتاب
-    sold_count = models.IntegerField(default=0)  # تعداد فروخته‌شده
+    sold_count = models.IntegerField(default=0)  # تعداد فروخته‌شد
     rating = models.DecimalField(max_digits=3, decimal_places=2, null=True, blank=True)  # امتیاز کتاب (اختیاری)
-    discount = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  # درصد تخفیف (اختیاری)
+    discount = models.DecimalField(max_digits=5, decimal_places=0, null=True, blank=True)  # درصد تخفیف (اختیاری)
     weight = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  # وزن کتاب به کیلوگرم
 
     def __str__(self):
