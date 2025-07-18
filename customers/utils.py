@@ -122,9 +122,3 @@ def calculate_shipping_cost(from_city_code, to_city_code, cart_total, cart_weigh
         return shipping_info  # برگرداندن اطلاعات هزینه ارسال از API
     else:
         return {"error": response.status_code, "message": response.text}
-
-# استفاده از تابع
-api_key = "your_api_key_here"
-shipping_cost = calculate_shipping_cost(1001, 2002, 450000, 2, api_key)
-print(shipping_cost)
-
