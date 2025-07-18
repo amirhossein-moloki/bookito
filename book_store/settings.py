@@ -1,6 +1,9 @@
 from pathlib import Path
 from datetime import timedelta
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Base directory
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -93,7 +96,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
             ],
-        },  
+        },
     },
 ]
 
@@ -104,6 +107,10 @@ CORS_ALLOW_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
 
 # Zarinpal Merchant ID
 ZARINPAL_MERCHANT_ID = os.getenv('ZARINPAL_MERCHANT_ID', '1234567890abcdef')
+
+# PostEx API
+POSTEX_API_KEY = os.getenv('POSTEX_API_KEY')
+POSTEX_BASE_URL = "https://api.postex.ir"
 
 # JWT Authentication
 SIMPLE_JWT = {
@@ -147,5 +154,5 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'bookito.bookstor@gmail.com'
-EMAIL_HOST_PASSWORD = 'woim hrrp klsl fecb'
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
