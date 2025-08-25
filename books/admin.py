@@ -26,3 +26,10 @@ class BookAdmin(admin.ModelAdmin):
     get_translators.short_description = 'Translators'
 
 admin.site.register(Book, BookAdmin)
+
+@admin.register(BookFormat)
+class BookFormatAdmin(admin.ModelAdmin):
+    list_display = ('book', 'format_name', 'price', 'stock', 'isbn')
+    search_fields = ('book__title', 'format_name', 'isbn')
+    list_filter = ('format_name',)
+    autocomplete_fields = ['book']

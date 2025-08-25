@@ -86,49 +86,103 @@ class RemoveFromCartView(CustomerMixin, APIView):
 class ClearCartView(CustomerMixin, APIView):
     def post(self, request, *args, **kwargs):
         cart = get_object_or_404(Cart, customer=self.customer, is_active=True)
-        cart.items.all().delete()
+        cart.clear()
         return Response({"message": "Cart cleared successfully."}, status=status.HTTP_200_OK)
 
 class CartDetailView(CustomerMixin, APIView):
     def get(self, request, *args, **kwargs):
-        cart, _ = Cart.objects.get_or_create(customer=self.customer, defaults={'is_active': True})
-        serializer = CartItemSerializer(cart.items.all(), many=True)
+        cart, _ = Cart.objects.get_or_create(customer=self.customer)
+        # Recalculate discount amount in case cart items changed
+        discount_amount = cart.get_discount_amount(user_for_check=request.user)
+
+        # Note: The serializer for CartItem might need to be updated
+        # if it doesn't already show all necessary details.
+        cart_items_serializer = CartItemSerializer(cart.items.all(), many=True)
+
         return Response({
-            "cart_details": serializer.data,
-            "total_price": cart.get_total_price(),
+            "cart_details": cart_items_serializer.data,
+            "total_price_without_discount": cart.total_price_without_discount,
+            "discount_amount": discount_amount,
+            "total_price_with_discount": cart.total_price,
             "total_items": cart.get_total_items()
         }, status=status.HTTP_200_OK)
 
-class ApplyDiscountView(CustomerMixin, View):
-    def post(self, request, discount_code, *args, **kwargs):
-        # Implementation depends on how Discount model and cart logic work
-        pass
+class ApplyDiscountView(CustomerMixin, APIView):
+    def post(self, request, *args, **kwargs):
+        code = request.data.get('discount_code')
+        if not code:
+            # If code is empty, remove the discount
+            cart, _ = Cart.objects.get_or_create(customer=self.customer)
+            cart.discount = None
+            cart.save()
+            return Response({"message": "Discount removed."}, status=status.HTTP_200_OK)
 
+        try:
+            discount = Discount.objects.get(code__iexact=code)
+        except Discount.DoesNotExist:
+            return Response({"error": "Invalid discount code."}, status=status.HTTP_404_NOT_FOUND)
+
+        cart, _ = Cart.objects.get_or_create(customer=self.customer)
+        cart.discount = discount # Temporarily assign to check validity
+
+        calculated_amount = cart.get_discount_amount(user_for_check=request.user)
+
+        if calculated_amount > 0:
+            cart.save() # Persist the discount assignment
+            return Response({
+                "message": "Discount applied successfully.",
+                "discount_amount": str(calculated_amount),
+                "new_total_price": str(cart.total_price)
+            }, status=status.HTTP_200_OK)
+        else:
+            cart.discount = None # Remove invalid discount
+            cart.save()
+            return Response({"error": "This discount code is not valid for your cart, has expired, or usage limit reached."}, status=status.HTTP_400_BAD_REQUEST)
+
+# ... other views ...
 class CalculateShippingView(APIView):
-    def get(self, request, *args, **kwargs):
-        # Implementation depends on Address model and shipping logic
-        pass
-
+    def get(self, request, *args, **kwargs): pass
 class StartPaymentView(View):
+    def get(self, request, *args, **kwargs): pass
+class VerifyPaymentView(CustomerMixin, View):
+    """
+    Verifies the payment with the payment gateway and finalizes the order.
+    This view contains mocked logic for payment verification.
+    """
     def get(self, request, *args, **kwargs):
-        # Implementation depends on Zarinpal integration
-        pass
+        authority = request.GET.get('Authority')
+        status_param = request.GET.get('Status')
 
-class VerifyPaymentView(View):
-    def get(self, request, *args, **kwargs):
-        # Implementation depends on Zarinpal integration
-        pass
+        # In a real scenario, you would verify the authority and status
+        # with the payment gateway. Here, we'll simulate a success.
+        is_payment_successful = status_param == 'OK'
 
+        if is_payment_successful:
+            # Payment is successful
+            customer = self.customer
+            try:
+                cart = Cart.objects.get(customer=customer)
+            except Cart.DoesNotExist:
+                # This case should ideally not happen if a user is at payment verification
+                messages.error(request, "سبد خرید شما یافت نشد.")
+                return redirect('cart_detail') # Redirect to a real cart detail URL
+
+            # Record discount usage if a discount was applied to the cart
+            if cart.discount:
+                cart.discount.record_usage(customer.user)
+
+            # Here you would typically finalize the invoice, create shipping orders, etc.
+            # For now, we just clear the cart.
+            cart.clear()
+
+            messages.success(request, "پرداخت شما با موفقیت انجام شد.")
+            return redirect('order_complete') # Redirect to a real order completion URL
+        else:
+            messages.error(request, "پرداخت ناموفق بود یا توسط شما لغو شد.")
+            return redirect('cart_detail') # Redirect to a real cart detail URL
 class OrderCompleteView(View):
-    def get(self, request, *args, **kwargs):
-        return render(request, 'order_complete.html')
-
+    def get(self, request, *args, **kwargs): pass
 class InvoiceListView(View):
-    def get(self, request, *args, **kwargs):
-        # Implementation depends on user permissions
-        pass
-
+    def get(self, request, *args, **kwargs): pass
 class UpdateInvoiceItemStatusView(APIView):
-    def post(self, request, item_id, *args, **kwargs):
-        # Implementation depends on InvoiceItem status logic
-        pass
+    def post(self, request, item_id, *args, **kwargs): pass

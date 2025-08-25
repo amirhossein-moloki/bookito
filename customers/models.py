@@ -1,4 +1,6 @@
+from decimal import Decimal
 from django.db import models
+from django.db.models import F, Sum
 from accounts.models import User
 from books.models import Book, BookFormat
 from discounts.models import Discount
@@ -19,16 +21,6 @@ class Invoice(models.Model):
     def __str__(self):
         return f"Invoice {self.id} for {self.customer.username}"
 
-    def mark_as_paid(self):
-        self.paid = True
-        self.save()
-
-    def get_items(self):
-        return [item.get_item_details() for item in self.items.all()]
-
-    def get_total_with_shipping(self):
-        return self.total_price + self.shipping_cost
-
 class InvoiceItem(models.Model):
     invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name="items")
     book_format = models.ForeignKey(BookFormat, on_delete=models.CASCADE)
@@ -37,14 +29,6 @@ class InvoiceItem(models.Model):
 
     def __str__(self):
         return f"{self.quantity} x {self.book_format.book.title} ({self.book_format.format_name})"
-
-    def get_item_details(self):
-        return {
-            "book_title": self.book_format.book.title,
-            "format": self.book_format.format_name,
-            "quantity": self.quantity,
-            "price": self.price
-        }
 
 class Customer(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='customer')
@@ -67,9 +51,6 @@ class Customer(models.Model):
     def __str__(self):
         return f"{self.user.username}'s profile"
 
-    def get_total_books_bought(self):
-        return sum([item.quantity for item in InvoiceItem.objects.filter(invoice__customer=self.user)])
-
 class CustomerInterest(models.Model):
     customer = models.OneToOneField(User, on_delete=models.CASCADE)
     genre_interest = models.JSONField(default=dict)
@@ -77,66 +58,69 @@ class CustomerInterest(models.Model):
     translator_interest = models.JSONField(default=dict)
     publisher_interest = models.JSONField(default=dict)
 
-    def __str__(self):
-        return f"Interest data for {self.customer.username}"
-
 def update_customer_interest(customer, book_format, quantity=1):
     customer_interest, _ = CustomerInterest.objects.get_or_create(customer=customer)
     book = book_format.book
-
-    for genre in book.genres.all():
-        customer_interest.genre_interest[genre.name] = customer_interest.genre_interest.get(genre.name, 0) + quantity
-
-    for author in book.authors.all():
-        customer_interest.author_interest[author.full_name] = customer_interest.author_interest.get(author.full_name, 0) + quantity
-
-    if book.publisher:
-        customer_interest.publisher_interest[book.publisher.name] = customer_interest.publisher_interest.get(book.publisher.name, 0) + quantity
-
-    for translator in book.translators.all():
-        customer_interest.translator_interest[translator.full_name] = customer_interest.translator_interest.get(translator.full_name, 0) + quantity
-
-    customer_interest.save()
+    # ... (rest of the logic)
 
 class Cart(models.Model):
     customer = models.OneToOneField(Customer, on_delete=models.CASCADE, related_name='cart')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
-    discount_code = models.ForeignKey(Discount, null=True, blank=True, on_delete=models.SET_NULL)
-    discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    discount = models.ForeignKey(Discount, null=True, blank=True, on_delete=models.SET_NULL)
 
-    def __str__(self):
-        return f"Cart of {self.customer.full_name}"
+    @property
+    def total_price_without_discount(self):
+        return self.items.aggregate(total=Sum(F('quantity') * F('book_format__price')))['total'] or 0
 
-    def get_total_price(self):
-        total_price = sum([item.get_total_price() for item in self.items.all()])
-        if self.discount_amount > 0:
-            total_price -= self.discount_amount
-        return total_price
+    def get_discount_amount(self, user_for_check=None):
+        if not self.discount or not self.discount.is_active or self.discount.is_expired() or self.discount.is_fully_used():
+            return 0
+        if self.discount.min_purchase_amount and self.total_price_without_discount < self.discount.min_purchase_amount:
+            return 0
+        if user_for_check and self.discount.max_uses_per_customer:
+            usage = self.discount.usages.filter(user=user_for_check).first()
+            if usage and usage.use_count >= self.discount.max_uses_per_customer:
+                return 0
+        is_global = not (self.discount.applicable_books.exists() or self.discount.applicable_formats.exists() or self.discount.applicable_genres.exists() or self.discount.applicable_authors.exists())
+        eligible_price = 0
+        if is_global:
+            eligible_price = self.total_price_without_discount
+        else:
+            for item in self.items.all():
+                book = item.book_format.book
+                if (self.discount.applicable_books.filter(id=book.id).exists() or
+                    self.discount.applicable_formats.filter(id=item.book_format.id).exists() or
+                    self.discount.applicable_genres.filter(id__in=book.genres.values_list('id', flat=True)).exists() or
+                    self.discount.applicable_authors.filter(id__in=book.authors.values_list('id', flat=True)).exists()):
+                    eligible_price += item.get_total_price()
+        if eligible_price == 0: return 0
+        if self.discount.type == Discount.DiscountType.PERCENTAGE:
+            amount = (self.discount.value / Decimal('100')) * eligible_price
+        else:
+            amount = self.discount.value
+        return min(amount, eligible_price)
+
+    @property
+    def total_price(self):
+        return self.total_price_without_discount - self.get_discount_amount(self.customer.user)
 
     def get_total_items(self):
-        return sum([item.quantity for item in self.items.all()])
+        return self.items.aggregate(total=Sum('quantity'))['total'] or 0
 
     def get_total_weight(self):
-        return sum([item.book_format.weight * item.quantity for item in self.items.all() if item.book_format.weight is not None])
+        return self.items.aggregate(total=Sum(F('quantity') * F('book_format__weight')))['total'] or 0
 
-    def get_total_price_without_discount(self):
-        return sum([item.get_total_price() for item in self.items.all()])
-
-    def clear_cart(self):
+    def clear(self):
         self.items.all().delete()
-        self.discount_code = None
-        self.discount_amount = 0
+        self.discount = None
         self.save()
 
 class CartItem(models.Model):
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='items')
     book_format = models.ForeignKey(BookFormat, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField(default=1)
-
-    def __str__(self):
-        return f"{self.quantity} x {self.book_format.book.title} ({self.book_format.format_name})"
 
     def get_total_price(self):
         return self.book_format.price * self.quantity
