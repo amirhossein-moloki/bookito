@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     'publishers',
     'translators',
     'reviews',
+    'recommendations',
     'rest_framework',
     'drf_yasg',
 ]
