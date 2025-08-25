@@ -30,8 +30,8 @@ class CartAdmin(admin.ModelAdmin):
     inlines = [CartItemInline]
 
 class CartItemAdmin(admin.ModelAdmin):
-    list_display = ('cart', 'book', 'quantity')
-    search_fields = ('cart__customer__username', 'book__title')
+    list_display = ('cart', 'book_format', 'quantity')
+    search_fields = ('cart__customer__username', 'book_format__book__title')
 
 # ثبت مدل‌ها در صفحه ادمین
 admin.site.register(Invoice, InvoiceAdmin)

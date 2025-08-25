@@ -6,28 +6,23 @@ from genres.models import Genre
 from Language.models import Language
 
 class Book(models.Model):
+    # Core, conceptual fields remain
     title = models.CharField(max_length=255)  # عنوان کتاب
     authors = models.ManyToManyField(Author, blank=True)  # ارتباط چند به چند با نویسنده
     translators = models.ManyToManyField(Translator, blank=True)  # ارتباط چند به چند با مترجم
     publisher = models.ForeignKey(Publisher, on_delete=models.SET_NULL, null=True, blank=True)  # ارتباط با ناشر
     publication_date = models.DateField(null=True, blank=True)  # تاریخ انتشار
-    isbn = models.CharField(max_length=13, unique=True, null=True, blank=True)  # شماره استاندارد بین‌المللی کتاب
-    price = models.DecimalField(max_digits=15, decimal_places=0)
     summary = models.TextField(null=True, blank=True)  # خلاصه کتاب
     genres = models.ManyToManyField(Genre, blank=True)  # ارتباط چند به چند با ژانر کتاب
     language = models.ForeignKey(Language, on_delete=models.SET_NULL, null=True, blank=True)  # ارتباط با زبان کتاب
-    page_count = models.IntegerField(null=True, blank=True)  # تعداد صفحات کتاب
-    cover_type = models.CharField(max_length=255, null=True, blank=True)
-    cover_image = models.ImageField(upload_to='books/covers/', null=True, blank=True)  # تصویر جلد کتاب
-    stock = models.IntegerField(default=0)  # تعداد موجودی کتاب
+
+    # This field is not format-specific
     sold_count = models.IntegerField(default=0)  # تعداد فروخته‌شد
-    rating = models.DecimalField(max_digits=3, decimal_places=2, null=True, blank=True)  # امتیاز کتاب (اختیاری)
-    discount = models.DecimalField(max_digits=5, decimal_places=0, null=True, blank=True)  # درصد تخفیف (اختیاری)
-    weight = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  # وزن کتاب به کیلوگرم
 
     def __str__(self):
         return self.title
 
+    # --- Obsolete classmethods removed ---
     @classmethod
     def get_books_by_genre(cls, genre_name):
         return cls.objects.filter(genres__name=genre_name)
@@ -45,25 +40,29 @@ class Book(models.Model):
         return cls.objects.filter(publisher__name=publisher_name)
 
     @classmethod
-    def get_books_by_price_range(cls, min_price, max_price):
-        return cls.objects.filter(price__gte=min_price, price__lte=max_price)
-
-    @classmethod
     def get_books_by_publication_date_range(cls, start_date, end_date):
         return cls.objects.filter(publication_date__gte=start_date, publication_date__lte=end_date)
 
-    @classmethod
-    def get_books_by_rating(cls, min_rating, max_rating):
-        return cls.objects.filter(rating__gte=min_rating, rating__lte=max_rating)
 
-    @classmethod
-    def get_books_by_discount(cls, min_discount, max_discount):
-        return cls.objects.filter(discount__gte=min_discount, discount__lte=max_discount)
+class BookFormat(models.Model):
+    book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='formats', verbose_name="کتاب")
+    format_name = models.CharField(max_length=100, verbose_name="نوع فرمت")  # e.g., Hardcover, Paperback, Ebook
 
-    @classmethod
-    def get_books_in_stock(cls):
-        return cls.objects.filter(stock__gt=0)
+    price = models.DecimalField(max_digits=15, decimal_places=0, verbose_name="قیمت")
+    isbn = models.CharField(max_length=13, unique=True, null=True, blank=True, verbose_name="شابک")
+    page_count = models.IntegerField(null=True, blank=True, verbose_name="تعداد صفحات")
+    weight = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, verbose_name="وزن (کیلوگرم)")
+    cover_image = models.ImageField(upload_to='books/covers/', null=True, blank=True, verbose_name="تصویر جلد")
+    stock = models.IntegerField(default=0, verbose_name="موجودی")
+    discount = models.DecimalField(max_digits=5, decimal_places=0, null=True, blank=True, verbose_name="درصد تخفیف")
 
+    class Meta:
+        verbose_name = "فرمت کتاب"
+        verbose_name_plural = "فرمت‌های کتاب"
+        unique_together = ('book', 'format_name')
+
+    def __str__(self):
+        return f"{self.book.title} ({self.format_name})"
 
 
 class Category(models.Model):

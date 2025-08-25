@@ -1,17 +1,44 @@
 from rest_framework import serializers
-from .models import Book
+from django.db.models import Avg
+from .models import Book, BookFormat
 from authors.serializers import AuthorSerializer
 from publishers.serializers import PublisherSerializer
 from translators.serializers import TranslatorSerializer
 from genres.serializers import GenreSerializer
 from Language.serializers import LanguageSerializer
 
+class BookFormatSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the BookFormat model. This represents a specific, purchasable
+    version of a book.
+    """
+    class Meta:
+        model = BookFormat
+        fields = [
+            'id',
+            'format_name',
+            'price',
+            'isbn',
+            'page_count',
+            'weight',
+            'cover_image',
+            'stock',
+            'discount',
+        ]
+
 class BookSerializer(serializers.ModelSerializer):
-    authors = AuthorSerializer(many=True)  # استفاده از authors به‌صورت لیست
-    translators = TranslatorSerializer(many=True)  # استفاده از translators به‌صورت لیست
-    publisher = PublisherSerializer()  # نگه داشتن publisher به‌صورت تک‌مقداری
-    genres = GenreSerializer(many=True)  # استفاده از genres به‌صورت لیست
-    language = LanguageSerializer()  # استفاده از language به‌صورت تک‌مقداری
+    """
+    Serializer for the conceptual Book model. It now includes a nested list
+    of all its available formats.
+    """
+    authors = AuthorSerializer(many=True, read_only=True)
+    translators = TranslatorSerializer(many=True, read_only=True)
+    publisher = PublisherSerializer(read_only=True)
+    genres = GenreSerializer(many=True, read_only=True)
+    language = LanguageSerializer(read_only=True)
+    average_rating = serializers.SerializerMethodField()
+    reviews_count = serializers.SerializerMethodField()
+    formats = BookFormatSerializer(many=True, read_only=True)  # Nested serializer
 
     class Meta:
         model = Book
@@ -22,33 +49,27 @@ class BookSerializer(serializers.ModelSerializer):
             'translators',
             'publisher',
             'publication_date',
-            'isbn',
-            'price',
             'summary',
             'genres',
             'language',
-            'page_count',
-            'cover_type',
-            'cover_image',
-            'stock',
             'sold_count',
-            'rating',
-            'discount',
-            'weight',  # اضافه کردن وزن کتاب
+            'average_rating',
+            'reviews_count',
+            'formats',  # Replaced old fields with this nested list
         ]
-        read_only_fields = ['id', 'sold_count', 'rating', 'stock']
+        read_only_fields = ['id', 'sold_count', 'average_rating', 'reviews_count']
 
-    def validate_isbn(self, value):
-        if value and len(value) != 13:
-            raise serializers.ValidationError("ISBN must be exactly 13 characters.")
-        return value
+    def get_average_rating(self, obj):
+        """
+        Calculates the average rating from all associated reviews.
+        """
+        reviews = obj.reviews.all()
+        if reviews.exists():
+            return round(reviews.aggregate(Avg('rating'))['rating__avg'], 2)
+        return None
 
-    def validate_price(self, value):
-        if value <= 0:
-            raise serializers.ValidationError("Price must be greater than zero.")
-        return value
-
-    def validate_discount(self, value):
-        if value and (value < 0 or value > 100):
-            raise serializers.ValidationError("Discount must be between 0 and 100.")
-        return value
+    def get_reviews_count(self, obj):
+        """
+        Counts the total number of reviews for the book.
+        """
+        return obj.reviews.count()

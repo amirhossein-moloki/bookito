@@ -1,146 +1,116 @@
-from rest_framework import generics, status
+from rest_framework.viewsets import ModelViewSet
+from rest_framework.permissions import IsAdminUser, AllowAny
+from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAdminUser, IsAuthenticated, AllowAny
+from rest_framework import status
+from django_filters.rest_framework import DjangoFilterBackend
+
 from .models import Book
 from .serializers import BookSerializer
 from .filters import BookFilter
 
-
-# 1. CreateBookView - ایجاد کتاب
-class CreateBookView(generics.CreateAPIView):
-    queryset = Book.objects.all()
+class BookViewSet(ModelViewSet):
+    """
+    A unified ViewSet for all actions related to Books.
+    """
+    queryset = Book.objects.all().prefetch_related('authors', 'translators', 'genres')
     serializer_class = BookSerializer
-    permission_classes = [IsAdminUser]  # فقط ادمین می‌تواند کتاب ایجاد کند
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = BookFilter
 
-    def perform_create(self, serializer):
-        try:
-            serializer.save()
-            return Response({"message": "کتاب با موفقیت ایجاد شد."}, status=status.HTTP_201_CREATED)
-        except Exception as e:
-            return Response({"error": f"خطا در ایجاد کتاب: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+    def get_permissions(self):
+        """
+        Instantiates and returns the list of permissions that this view requires.
+        - Admin users are required for write actions (create, update, destroy).
+        - Any user (including anonymous) can perform read actions.
+        """
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            self.permission_classes = [IsAdminUser]
+        else:
+            self.permission_classes = [AllowAny]
+        return super().get_permissions()
 
+    # --- Overriding default actions to keep custom responses ---
 
-# 2. UpdateBookView - به‌روزرسانی کتاب
-class UpdateBookView(generics.UpdateAPIView):
-    queryset = Book.objects.all()
-    serializer_class = BookSerializer
-    permission_classes = [IsAdminUser]  # فقط ادمین می‌تواند کتاب را به‌روزرسانی کند
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(
+            {"message": "کتاب با موفقیت ایجاد شد.", "data": serializer.data},
+            status=status.HTTP_201_CREATED,
+            headers=headers
+        )
 
-    def perform_update(self, serializer):
-        try:
-            serializer.save()
-            return Response({"message": "کتاب با موفقیت به‌روزرسانی شد."}, status=status.HTTP_200_OK)
-        except Exception as e:
-            return Response({"error": f"خطا در به‌روزرسانی کتاب: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response({"message": "کتاب با موفقیت به‌روزرسانی شد.", "data": serializer.data})
 
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response({"message": "کتاب با موفقیت حذف شد."}, status=status.HTTP_204_NO_CONTENT)
 
-# 3. DeleteBookView - حذف کتاب
-class DeleteBookView(generics.DestroyAPIView):
-    queryset = Book.objects.all()
-    serializer_class = BookSerializer
-    permission_classes = [IsAdminUser]  # فقط ادمین می‌تواند کتاب را حذف کند
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return Response({"message": "جزئیات کتاب با موفقیت بازیابی شد.", "data": serializer.data})
 
-    def perform_destroy(self, instance):
-        try:
-            instance.delete()
-            return Response({"message": "کتاب با موفقیت حذف شد."}, status=status.HTTP_204_NO_CONTENT)
-        except Exception as e:
-            return Response({"error": f"خطا در حذف کتاب: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+    # --- Custom actions for specific queries ---
 
-
-# 4. BookListView - نمایش لیست کتاب‌ها
-class BookListView(generics.ListAPIView):
-    queryset = Book.objects.all()
-    serializer_class = BookSerializer
-    permission_classes = [AllowAny]  # دسترسی عمومی برای همه کاربران
-
-    def get(self, request, *args, **kwargs):
-        books = self.get_queryset()
-        if not books.exists():
-            return Response({"error": "هیچ کتابی یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
-        return super().get(request, *args, **kwargs)
-
-
-# 5. BookSearchView - جستجو برای کتاب‌ها بر اساس نام
-class BookSearchView(generics.ListAPIView):
-    serializer_class = BookSerializer
-    permission_classes = [AllowAny]  # دسترسی عمومی برای همه کاربران
-
-    def get_queryset(self):
-        query = self.request.query_params.get('query', '')
+    @action(detail=False, methods=['get'], url_path='search')
+    def search(self, request):
+        """
+        Searches for books by title.
+        Expects a 'query' query parameter.
+        """
+        query = request.query_params.get('query', None)
         if not query:
             return Response({"error": "پارامتر جستجو ضروری است."}, status=status.HTTP_400_BAD_REQUEST)
 
-        books = Book.objects.filter(title__icontains=query)
+        books = self.get_queryset().filter(title__icontains=query)
         if not books.exists():
             return Response({"error": "هیچ کتابی با این نام پیدا نشد."}, status=status.HTTP_404_NOT_FOUND)
-        return books
 
+        page = self.paginate_queryset(books)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
 
-# 6. BookFilterView - فیلتر کتاب‌ها بر اساس پارامترهای جستجو
-class BookFilterView(generics.ListAPIView):
-    serializer_class = BookSerializer
-    permission_classes = [AllowAny]  # دسترسی عمومی برای همه کاربران
+        serializer = self.get_serializer(books, many=True)
+        return Response(serializer.data)
 
-    def get_queryset(self):
-        # استفاده از BookFilter برای فیلتر کردن کتاب‌ها
-        filtered_books = BookFilter(self.request.GET, queryset=Book.objects.all()).qs
-        if not filtered_books.exists():
-            return Response({"error": "هیچ کتابی با فیلترهای مشخص شده پیدا نشد."}, status=status.HTTP_404_NOT_FOUND)
-        return filtered_books
-
-
-# 7. BookDiscountView - نمایش کتاب‌ها با تخفیف
-class BookDiscountView(generics.ListAPIView):
-    serializer_class = BookSerializer
-    permission_classes = [AllowAny]  # دسترسی عمومی برای همه کاربران
-
-    def get_queryset(self):
-        min_discount = self.request.query_params.get('min_discount', 0)
-        max_discount = self.request.query_params.get('max_discount', 100)
-        books = Book.objects.filter(discount__gte=min_discount, discount__lte=max_discount)
+    @action(detail=False, methods=['get'], url_path='discount')
+    def discount_list(self, request):
+        """
+        Lists books that have a discount.
+        """
+        books = self.get_queryset().filter(discount__isnull=False, discount__gt=0)
         if not books.exists():
-            return Response({"error": "هیچ کتابی با این بازه تخفیف پیدا نشد."},
-                            status=status.HTTP_404_NOT_FOUND)
-        return books
+            return Response({"error": "هیچ کتابی با تخفیف پیدا نشد."}, status=status.HTTP_404_NOT_FOUND)
 
+        serializer = self.get_serializer(books, many=True)
+        return Response(serializer.data)
 
-# 8. BookPriceAscView - نمایش کتاب‌ها از ارزان‌ترین به گران‌ترین
-class BookPriceAscView(generics.ListAPIView):
-    serializer_class = BookSerializer
-    permission_classes = [AllowAny]  # دسترسی عمومی برای همه کاربران
+    @action(detail=False, methods=['get'], url_path='price-asc')
+    def price_asc(self, request):
+        """
+        Lists books ordered by price ascending.
+        """
+        books = self.get_queryset().order_by('price')
+        serializer = self.get_serializer(books, many=True)
+        return Response(serializer.data)
 
-    def get_queryset(self):
-        books = Book.objects.all().order_by('price')
-        if not books.exists():
-            return Response({"error": "هیچ کتابی در دسترس نیست."}, status=status.HTTP_404_NOT_FOUND)
-        return books
-
-
-# 9. BookPriceDescView - نمایش کتاب‌ها از گران‌ترین به ارزان‌ترین
-class BookPriceDescView(generics.ListAPIView):
-    serializer_class = BookSerializer
-    permission_classes = [AllowAny]  # دسترسی عمومی برای همه کاربران
-
-    def get_queryset(self):
-        books = Book.objects.all().order_by('-price')
-        if not books.exists():
-            return Response({"error": "هیچ کتابی در دسترس نیست."}, status=status.HTTP_404_NOT_FOUND)
-        return books
-
-
-# 10. BookDetailView - نمایش جزئیات یک کتاب خاص
-class BookDetailView(generics.RetrieveAPIView):
-    queryset = Book.objects.all()
-    serializer_class = BookSerializer
-    permission_classes = [AllowAny]  # دسترسی عمومی برای همه کاربران
-
-    def get(self, request, *args, **kwargs):
-        try:
-            book = self.get_object()
-            return Response({
-                "message": "جزئیات کتاب با موفقیت بازیابی شد.",
-                "data": BookSerializer(book).data
-            })
-        except Book.DoesNotExist:
-            return Response({"error": "کتاب پیدا نشد."}, status=status.HTTP_404_NOT_FOUND)
+    @action(detail=False, methods=['get'], url_path='price-desc')
+    def price_desc(self, request):
+        """
+        Lists books ordered by price descending.
+        """
+        books = self.get_queryset().order_by('-price')
+        serializer = self.get_serializer(books, many=True)
+        return Response(serializer.data)

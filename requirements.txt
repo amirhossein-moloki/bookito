@@ -29,3 +29,4 @@ urllib3==2.3.0
 wheel==0.45.1
 zarinpal-python-sdk==0.2
 python-dotenv
+drf-nested-routers==0.94.2

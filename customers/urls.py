@@ -1,14 +1,14 @@
 from django.urls import path
 from .views import (
-    AddBookToCartView, RemoveBookFromCartView, ClearCartView, CartDetailView,
+    AddToCartView, RemoveFromCartView, ClearCartView, CartDetailView,
     ApplyDiscountView, CalculateShippingView, StartPaymentView, VerifyPaymentView,
     OrderCompleteView, InvoiceListView
 )
 
 urlpatterns = [
     # Cart API URLs
-    path('cart/add/', AddBookToCartView.as_view(), name='add_to_cart'),
-    path('cart/remove/', RemoveBookFromCartView.as_view(), name='remove_from_cart'),
+    path('cart/add/', AddToCartView.as_view(), name='add_to_cart'),
+    path('cart/remove/', RemoveFromCartView.as_view(), name='remove_from_cart'),
     path('cart/clear/', ClearCartView.as_view(), name='clear_cart'),
     path('cart/detail/', CartDetailView.as_view(), name='cart_detail'),
 

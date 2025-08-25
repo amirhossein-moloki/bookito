@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import Invoice, InvoiceItem, Customer, CustomerInterest, Cart, CartItem
-from books.serializers import BookSerializer
+from books.serializers import BookFormatSerializer  # Updated import
 from authors.serializers import AuthorSerializer
 from publishers.serializers import PublisherSerializer
 from translators.serializers import TranslatorSerializer
@@ -10,16 +10,16 @@ from accounts.serializers import UserSerializer
 from address.serializers import AddressSerializer
 
 class InvoiceItemSerializer(serializers.ModelSerializer):
-    book = BookSerializer()
+    book_format = BookFormatSerializer(read_only=True)  # Changed field
 
     class Meta:
         model = InvoiceItem
-        fields = ['book', 'quantity', 'price']
+        fields = ['id', 'book_format', 'quantity', 'price']  # Changed field
 
 
 class InvoiceSerializer(serializers.ModelSerializer):
-    customer = UserSerializer()
-    items = InvoiceItemSerializer(many=True)
+    customer = UserSerializer(read_only=True)
+    items = InvoiceItemSerializer(many=True, read_only=True)
 
     class Meta:
         model = Invoice
@@ -27,12 +27,12 @@ class InvoiceSerializer(serializers.ModelSerializer):
 
 
 class CustomerSerializer(serializers.ModelSerializer):
-    user = UserSerializer()
-    address = AddressSerializer()
-    favorite_genres = GenreSerializer(many=True)
-    favorite_authors = AuthorSerializer(many=True)
-    favorite_publishers = PublisherSerializer(many=True)
-    favorite_translators = TranslatorSerializer(many=True)
+    user = UserSerializer(read_only=True)
+    address = AddressSerializer(read_only=True)
+    favorite_genres = GenreSerializer(many=True, read_only=True)
+    favorite_authors = AuthorSerializer(many=True, read_only=True)
+    favorite_publishers = PublisherSerializer(many=True, read_only=True)
+    favorite_translators = TranslatorSerializer(many=True, read_only=True)
 
     class Meta:
         model = Customer
@@ -41,10 +41,11 @@ class CustomerSerializer(serializers.ModelSerializer):
 
 
 class CustomerInterestSerializer(serializers.ModelSerializer):
-    genre_interest = serializers.JSONField()
-    author_interest = serializers.JSONField()
-    translator_interest = serializers.JSONField()
-    publisher_interest = serializers.JSONField()
+    customer = UserSerializer(read_only=True)
+    genre_interest = serializers.JSONField(read_only=True)
+    author_interest = serializers.JSONField(read_only=True)
+    translator_interest = serializers.JSONField(read_only=True)
+    publisher_interest = serializers.JSONField(read_only=True)
 
     class Meta:
         model = CustomerInterest
@@ -52,24 +53,28 @@ class CustomerInterestSerializer(serializers.ModelSerializer):
 
 
 class CartItemSerializer(serializers.ModelSerializer):
-    book = BookSerializer()  # اطلاعات کتاب را به صورت تو در تویی سریال می‌کنیم
+    book_format = BookFormatSerializer(read_only=True)  # For displaying the nested object
+    book_format_id = serializers.IntegerField(write_only=True)  # For creating/updating
     total_price = serializers.SerializerMethodField()
 
     class Meta:
         model = CartItem
-        fields = ['book', 'quantity', 'total_price']
+        fields = ['id', 'book_format', 'book_format_id', 'quantity', 'total_price']
 
     def get_total_price(self, obj):
-        return str(obj.get_total_price())  # نمایش قیمت کل به صورت رشته
+        return obj.get_total_price()
 
 
 class CartSerializer(serializers.ModelSerializer):
-    customer = CustomerSerializer()
-    items = CartItemSerializer(many=True)
-    discount_code = DiscountSerializer()
+    customer = CustomerSerializer(read_only=True)
+    items = CartItemSerializer(many=True, read_only=True)
+    discount_code = DiscountSerializer(read_only=True)
+    total_price = serializers.SerializerMethodField()
 
     class Meta:
         model = Cart
-        fields = ['customer', 'created_at', 'updated_at', 'is_active', 'discount_code', 'discount_amount', 'items']
+        fields = ['id', 'customer', 'created_at', 'updated_at', 'is_active', 'discount_code',
+                  'discount_amount', 'items', 'total_price']
 
-
+    def get_total_price(self, obj):
+        return obj.get_total_price()
