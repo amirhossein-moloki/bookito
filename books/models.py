@@ -21,7 +21,6 @@ class Book(models.Model):
     cover_image = models.ImageField(upload_to='books/covers/', null=True, blank=True)  # تصویر جلد کتاب
     stock = models.IntegerField(default=0)  # تعداد موجودی کتاب
     sold_count = models.IntegerField(default=0)  # تعداد فروخته‌شد
-    rating = models.DecimalField(max_digits=3, decimal_places=2, null=True, blank=True)  # امتیاز کتاب (اختیاری)
     discount = models.DecimalField(max_digits=5, decimal_places=0, null=True, blank=True)  # درصد تخفیف (اختیاری)
     weight = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  # وزن کتاب به کیلوگرم
 
@@ -51,10 +50,6 @@ class Book(models.Model):
     @classmethod
     def get_books_by_publication_date_range(cls, start_date, end_date):
         return cls.objects.filter(publication_date__gte=start_date, publication_date__lte=end_date)
-
-    @classmethod
-    def get_books_by_rating(cls, min_rating, max_rating):
-        return cls.objects.filter(rating__gte=min_rating, rating__lte=max_rating)
 
     @classmethod
     def get_books_by_discount(cls, min_discount, max_discount):

@@ -7,10 +7,10 @@ from genres.models import Genre
 from Language.models import Language
 
 class BookAdmin(admin.ModelAdmin):
-    list_display = ('title', 'get_authors', 'get_translators', 'publisher', 'publication_date', 'isbn', 'price', 'stock', 'sold_count', 'rating', 'discount')
+    list_display = ('title', 'get_authors', 'get_translators', 'publisher', 'publication_date', 'isbn', 'price', 'stock', 'sold_count', 'discount')
     list_filter = ('authors', 'translators', 'publisher', 'genres', 'language', 'publication_date')  # اصلاح شده
     search_fields = ('title', 'isbn', 'authors__name', 'translators__name', 'publisher__name', 'genres__name', 'language__name')
-    list_editable = ('price', 'stock', 'rating', 'discount')
+    list_editable = ('price', 'stock', 'discount')
     ordering = ('-publication_date',)
 
     # متدهایی برای گرفتن نام نویسنده‌ها و مترجم‌ها

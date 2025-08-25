@@ -1,26 +1,17 @@
-from django.urls import path
-from .views import (
-    CreateBookView,
-    UpdateBookView,
-    DeleteBookView,
-    BookListView,
-    BookSearchView,
-    BookFilterView,
-    BookDiscountView,
-    BookPriceAscView,
-    BookPriceDescView,
-    BookDetailView
-)
+from django.urls import path, include
+from rest_framework_nested import routers
+from .views import BookViewSet
+from reviews.views import ReviewViewSet
 
-urlpatterns = [
-    path('', BookListView.as_view(), name='book-list'),
-    path('create/', CreateBookView.as_view(), name='create-book'),
-    path('update/<int:pk>/', UpdateBookView.as_view(), name='update-book'),
-    path('delete/<int:pk>/', DeleteBookView.as_view(), name='delete-book'),
-    path('search/', BookSearchView.as_view(), name='search-book'),
-    path('filter/', BookFilterView.as_view(), name='filter-books'),
-    path('discount/', BookDiscountView.as_view(), name='books-with-discount'),
-    path('price-asc/', BookPriceAscView.as_view(), name='books-price-asc'),
-    path('price-desc/', BookPriceDescView.as_view(), name='books-price-desc'),
-    path('detail/<int:pk>/', BookDetailView.as_view(), name='book-detail'),
-]
+# Using SimpleRouter to avoid the default API root view
+router = routers.SimpleRouter()
+router.register(r'', BookViewSet, basename='books')
+
+# Create a nested router for reviews under books.
+# The `lookup` argument ('book') will create a URL pattern like /books/<book_pk>/reviews/
+# The 'book_pk' kwarg is what the ReviewViewSet is expecting to find the parent book.
+reviews_router = routers.NestedSimpleRouter(router, r'', lookup='book')
+reviews_router.register(r'reviews', ReviewViewSet, basename='book-reviews')
+
+# Combine the urlpatterns from both the parent and the nested router.
+urlpatterns = router.urls + reviews_router.urls

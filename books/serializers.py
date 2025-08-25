@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.db.models import Avg
 from .models import Book
 from authors.serializers import AuthorSerializer
 from publishers.serializers import PublisherSerializer
@@ -7,11 +8,13 @@ from genres.serializers import GenreSerializer
 from Language.serializers import LanguageSerializer
 
 class BookSerializer(serializers.ModelSerializer):
-    authors = AuthorSerializer(many=True)  # استفاده از authors به‌صورت لیست
-    translators = TranslatorSerializer(many=True)  # استفاده از translators به‌صورت لیست
-    publisher = PublisherSerializer()  # نگه داشتن publisher به‌صورت تک‌مقداری
-    genres = GenreSerializer(many=True)  # استفاده از genres به‌صورت لیست
-    language = LanguageSerializer()  # استفاده از language به‌صورت تک‌مقداری
+    authors = AuthorSerializer(many=True, read_only=True)
+    translators = TranslatorSerializer(many=True, read_only=True)
+    publisher = PublisherSerializer(read_only=True)
+    genres = GenreSerializer(many=True, read_only=True)
+    language = LanguageSerializer(read_only=True)
+    average_rating = serializers.SerializerMethodField()
+    reviews_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Book
@@ -32,11 +35,30 @@ class BookSerializer(serializers.ModelSerializer):
             'cover_image',
             'stock',
             'sold_count',
-            'rating',
+            'average_rating',
+            'reviews_count',
             'discount',
-            'weight',  # اضافه کردن وزن کتاب
+            'weight',
         ]
-        read_only_fields = ['id', 'sold_count', 'rating', 'stock']
+        read_only_fields = ['id', 'sold_count', 'stock', 'average_rating', 'reviews_count']
+
+    def get_average_rating(self, obj):
+        """
+        Calculates the average rating for the book.
+        The 'reviews' related_name comes from the Review model's ForeignKey to Book.
+        """
+        # The .all() is not strictly necessary but can be explicit
+        reviews = obj.reviews.all()
+        if reviews.exists():
+            # The aggregate function returns a dictionary, e.g., {'rating__avg': 4.33}
+            return round(reviews.aggregate(Avg('rating'))['rating__avg'], 2)
+        return None  # Return None if there are no reviews
+
+    def get_reviews_count(self, obj):
+        """
+        Counts the number of reviews for the book.
+        """
+        return obj.reviews.count()
 
     def validate_isbn(self, value):
         if value and len(value) != 13:
