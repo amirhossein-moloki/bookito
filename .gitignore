@@ -1,1 +1,16 @@
 .env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtualenv
+venv/
+env/
+.venv/
+
+# Database
+*.sqlite3
+db.sqlite3

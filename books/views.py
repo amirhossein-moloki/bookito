@@ -1,15 +1,14 @@
-from rest_framework.viewsets import ModelViewSet
-from rest_framework.permissions import IsAdminUser, AllowAny
+from rest_framework import status, viewsets, mixins
 from rest_framework.decorators import action
+from rest_framework.permissions import IsAdminUser, AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework import status
 from django_filters.rest_framework import DjangoFilterBackend
 
-from .models import Book
-from .serializers import BookSerializer
+from .models import Book, StockNotification
+from .serializers import BookSerializer, StockNotificationSerializer
 from .filters import BookFilter
 
-class BookViewSet(ModelViewSet):
+class BookViewSet(viewsets.ModelViewSet):
     """
     A unified ViewSet for all actions related to Books.
     """
@@ -114,3 +113,27 @@ class BookViewSet(ModelViewSet):
         books = self.get_queryset().order_by('-price')
         serializer = self.get_serializer(books, many=True)
         return Response(serializer.data)
+
+
+class StockNotificationViewSet(mixins.CreateModelMixin,
+                               mixins.ListModelMixin,
+                               viewsets.GenericViewSet):
+    """
+    ViewSet for users to subscribe to stock notifications.
+    - list: Shows the user their active subscriptions.
+    - create: Creates a new subscription for an out-of-stock item.
+    """
+    serializer_class = StockNotificationSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        """
+        Users can only see their own active notification requests.
+        """
+        return StockNotification.objects.filter(user=self.request.user, notified=False)
+
+    def perform_create(self, serializer):
+        """
+        Associate the notification request with the authenticated user.
+        """
+        serializer.save(user=self.request.user)

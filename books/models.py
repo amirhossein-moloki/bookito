@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 from authors.models import Author
 from publishers.models import Publisher
 from translators.models import Translator
@@ -71,3 +72,19 @@ class Category(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class StockNotification(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='stock_notifications')
+    book_format = models.ForeignKey(BookFormat, on_delete=models.CASCADE, related_name='stock_notifications')
+    created_at = models.DateTimeField(auto_now_add=True)
+    notified = models.BooleanField(default=False)
+    notified_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Stock Notification"
+        verbose_name_plural = "Stock Notifications"
+        unique_together = ('user', 'book_format', 'notified')
+
+    def __str__(self):
+        return f"Notification for {self.user.username} on {self.book_format.book.title}"

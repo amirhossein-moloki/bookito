@@ -1,11 +1,14 @@
 from django.urls import path, include
 from rest_framework_nested import routers
-from .views import BookViewSet
+from .views import BookViewSet, StockNotificationViewSet
 from reviews.views import ReviewViewSet
 
 # Using SimpleRouter to avoid the default API root view
 router = routers.SimpleRouter()
+# Register the more specific route first to avoid conflicts with the root route
+router.register(r'stock-notifications', StockNotificationViewSet, basename='stock-notification')
 router.register(r'', BookViewSet, basename='books')
+
 
 # Create a nested router for reviews under books.
 # The `lookup` argument ('book') will create a URL pattern like /books/<book_pk>/reviews/
