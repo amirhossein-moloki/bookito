@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.db.models import Avg
-from .models import Book, BookFormat
+from .models import Book, BookFormat, StockNotification
 from authors.serializers import AuthorSerializer
 from publishers.serializers import PublisherSerializer
 from translators.serializers import TranslatorSerializer
@@ -73,3 +73,33 @@ class BookSerializer(serializers.ModelSerializer):
         Counts the total number of reviews for the book.
         """
         return obj.reviews.count()
+
+
+class StockNotificationSerializer(serializers.ModelSerializer):
+    """
+    Serializer for creating a stock notification request.
+    """
+    user = serializers.StringRelatedField(read_only=True)
+    book_format = serializers.PrimaryKeyRelatedField(
+        queryset=BookFormat.objects.all(),
+        write_only=True
+    )
+
+    class Meta:
+        model = StockNotification
+        fields = ['id', 'user', 'book_format', 'created_at']
+        read_only_fields = ['id', 'user', 'created_at']
+
+    def validate_book_format(self, book_format):
+        """
+        Check that the book format is out of stock.
+        """
+        if book_format.stock > 0:
+            raise serializers.ValidationError("Cannot subscribe to notifications for an item that is in stock.")
+
+        request = self.context.get('request')
+        if request and hasattr(request, 'user'):
+            if StockNotification.objects.filter(user=request.user, book_format=book_format, notified=False).exists():
+                raise serializers.ValidationError("You have already subscribed for notifications for this item.")
+
+        return book_format

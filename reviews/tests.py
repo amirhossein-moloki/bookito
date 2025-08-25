@@ -1,7 +1,7 @@
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
-from books.models import Book
+from books.models import Book, BookFormat
 from accounts.models import User
 from .models import Review
 
@@ -11,7 +11,8 @@ class ReviewAPITests(APITestCase):
         """Set up data for the whole test class."""
         cls.user1 = User.objects.create_user(username='user1', password='password123')
         cls.user2 = User.objects.create_user(username='user2', password='password123')
-        cls.book = Book.objects.create(title='Test Book for Reviews', price=100)
+        cls.book = Book.objects.create(title='Test Book for Reviews')
+        BookFormat.objects.create(book=cls.book, format_name='Paperback', price=100)
 
         # Create a review to be used in update/delete/get tests
         cls.review = Review.objects.create(
@@ -39,7 +40,8 @@ class ReviewAPITests(APITestCase):
 
     def test_create_review_authenticated(self):
         """Ensure authenticated users can create a review."""
-        book2 = Book.objects.create(title='Another Book', price=200)
+        book2 = Book.objects.create(title='Another Book')
+        BookFormat.objects.create(book=book2, format_name='Hardcover', price=200)
         url = f'/books/{book2.pk}/reviews/'
 
         self.client.force_authenticate(user=self.user2)
