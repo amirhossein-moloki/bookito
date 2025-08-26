@@ -23,7 +23,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Invoice
-        fields = ['id', 'customer', 'total_price', 'created_at', 'paid', 'items']
+        fields = ['id', 'customer', 'total_price', 'created_at', 'paid', 'status', 'items']
 
 
 class CustomerSerializer(serializers.ModelSerializer):

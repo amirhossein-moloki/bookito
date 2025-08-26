@@ -7,10 +7,11 @@ class InvoiceItemInline(admin.TabularInline):
     autocomplete_fields = ['book_format']
 
 class InvoiceAdmin(admin.ModelAdmin):
-    list_display = ('id', 'customer', 'total_price', 'created_at', 'paid')
-    list_filter = ('paid', 'created_at')
+    list_display = ('id', 'customer', 'total_price', 'created_at', 'paid', 'status')
+    list_filter = ('paid', 'created_at', 'status')
     search_fields = ('customer__user__username', 'id')
     inlines = [InvoiceItemInline]
+    list_editable = ('status',)
 
 class CustomerAdmin(admin.ModelAdmin):
     list_display = ('user', 'full_name', 'phone_number', 'email', 'is_active', 'registration_date')

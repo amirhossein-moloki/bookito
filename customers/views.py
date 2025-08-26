@@ -215,8 +215,14 @@ class VerifyPaymentView(CustomerMixin, View):
             return redirect('cart_detail') # Redirect to a real cart detail URL
 class OrderCompleteView(View):
     def get(self, request, *args, **kwargs): pass
-class InvoiceListView(View):
-    def get(self, request, *args, **kwargs): pass
+from .serializers import InvoiceSerializer
+
+class InvoiceListView(generics.ListAPIView):
+    serializer_class = InvoiceSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Invoice.objects.filter(customer=self.request.user)
 class UpdateInvoiceItemStatusView(APIView):
     def post(self, request, item_id, *args, **kwargs): pass
 
