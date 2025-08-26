@@ -1,70 +1,108 @@
-# **Online Bookstore (Bookito)**
+# Bookito - Online Bookstore
 
-This project is an **Online Bookstore** built using **Django** and **Django REST Framework**. The source code for this project is open to the public, and you can submit a **Pull Request** to contribute changes.
-
----
-
-## **Features**
-
-- **User Management & Authentication** with **JWT**
-- **Online Payment Integration** with **Zarinpal**
-- **Postex & Zarinpal API Integration** (API keys required)
-- **Order & Cart Management**
-- **Book Categorization & Search**
-- **API Documentation** using **Swagger** & **ReDoc**
-- **Enhanced Security** including **CSRF**, **Secure Cookies**, and **HSTS**
+**Bookito** is a comprehensive online bookstore platform developed with Django and Django REST Framework. It provides a robust backend for managing books, authors, customers, and orders, with a secure and well-documented API.
 
 ---
 
-## **Installation & Setup**
+## Features
 
-1. **Clone the repository:**
+- **User Management**: Secure user authentication and authorization using JWT.
+- **Product Management**: Easily manage books, authors, genres, and publishers.
+- **Order Processing**: A complete system for handling customer orders, carts, and payments.
+- **Payment Integration**: Seamlessly integrated with Zarinpal for online payments.
+- **API Documentation**: Automatically generated and interactive API documentation with Swagger and ReDoc.
+- **Search and Filtering**: Advanced search capabilities to find books by title, author, or genre.
+- **Recommendations**: A recommendation engine to suggest books to users.
+- **Security**: Built-in security features such as CSRF protection, secure cookies, and HSTS.
+
+---
+
+## Technologies Used
+
+- **Backend**: Django, Django REST Framework
+- **Database**: PostgreSQL (or SQLite for development)
+- **Authentication**: Simple JWT for token-based authentication
+- **API Documentation**: drf-yasg for Swagger and ReDoc generation
+- **Payment Gateway**: zarinpal-python-sdk
+- **Other Libraries**: A full list of dependencies can be found in the `requirements.txt` file.
+
+---
+
+## Project Structure
+
+The project is organized into several Django apps, each with a specific responsibility:
+
+- `accounts`: Manages user accounts, authentication, and profiles.
+- `address`: Handles user addresses.
+- `authors`: Manages book authors.
+- `books`: Contains models and logic for books, including details, pricing, and stock.
+- `customers`: Manages customer information, carts, and orders.
+- `dashboard`: Provides an admin dashboard for managing the store.
+- `discounts`: Handles discount codes and promotions.
+- `genres`: Manages book genres.
+- `publishers`: Manages book publishers.
+- `recommendations`: Powers the book recommendation engine.
+- `reviews`: Allows users to submit reviews for books.
+- `translators`: Manages book translators.
+
+---
+
+## Installation and Setup
+
+1.  **Clone the repository**:
     ```bash
     git clone https://github.com/amirhossein-moloki/bookito.git
     cd bookito
     ```
 
-2. **Create a virtual environment and install dependencies:**
+2.  **Create and activate a virtual environment**:
     ```bash
     python -m venv venv
-    source venv/bin/activate  # On Windows: venv\Scripts\activate
+    source venv/bin/activate  # On Windows use `venv\Scripts\activate`
+    ```
+
+3.  **Install the dependencies**:
+    ```bash
     pip install -r requirements.txt
     ```
 
-3. **Set up environment variables** (such as `DJANGO_SECRET_KEY`, `ZARINPAL_MERCHANT_ID`, and API keys for Postex & Zarinpal).
+4.  **Configure environment variables**:
+    Create a `.env` file in the project root and add the necessary environment variables, such as `DJANGO_SECRET_KEY` and API keys for payment gateways. You can use `.env.new` as a template.
 
-4. **Apply database migrations:**
+5.  **Apply database migrations**:
     ```bash
     python manage.py migrate
     ```
 
-5. **Run the server:**
+6.  **Run the development server**:
     ```bash
     python manage.py runserver
     ```
+    The application will be available at `http://127.0.0.1:8000`.
 
 ---
 
-## **API Documentation**
+## API Documentation
 
-After running the server, visit the following endpoints for API documentation:
+Once the server is running, you can access the API documentation at the following endpoints:
 
-- **Swagger UI:** [http://127.0.0.1:8000/swagger/](http://127.0.0.1:8000/swagger/)
-- **ReDoc:** [http://127.0.0.1:8000/redoc/](http://127.0.0.1:8000/redoc/)
-
----
-
-## **Contributing**
-
-You can fork this repository and make your changes.
-
-After making changes, submit a **Pull Request**.
-
-For any inquiries or suggestions, feel free to contact me at:
-- **Email:** [amirh.moloki@gmail.com](mailto:amirh.moloki@gmail.com)
+-   **Swagger UI**: `http://127.0.0.1:8000/swagger/`
+-   **ReDoc**: `http://127.0.0.1:8000/redoc/`
 
 ---
 
-## **License**
+## Contributing
 
-This project is open-source and free to use for everyone.
+Contributions are welcome! If you have any suggestions or want to improve the project, please fork the repository and submit a pull request.
+
+1.  Fork the Project
+2.  Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3.  Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4.  Push to the Branch (`git push origin feature/AmazingFeature`)
+5.  Open a Pull Request
+
+---
+
+## License
+
+This project is licensed under the MIT License. See the `LICENSE` file for more details.
