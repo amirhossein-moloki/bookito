@@ -49,6 +49,8 @@ The project is organized into several Django apps, each with a specific responsi
 
 ## Installation and Setup
 
+### Local Installation
+
 1.  **Clone the repository**:
     ```bash
     git clone https://github.com/amirhossein-moloki/bookito.git
@@ -67,7 +69,7 @@ The project is organized into several Django apps, each with a specific responsi
     ```
 
 4.  **Configure environment variables**:
-    Create a `.env` file in the project root and add the necessary environment variables, such as `DJANGO_SECRET_KEY` and API keys for payment gateways. You can use `.env.new` as a template.
+    Create a `.env` file in the project root and add the necessary environment variables. You can use `.env.new` as a template.
 
 5.  **Apply database migrations**:
     ```bash
@@ -79,6 +81,37 @@ The project is organized into several Django apps, each with a specific responsi
     python manage.py runserver
     ```
     The application will be available at `http://127.0.0.1:8000`.
+
+---
+
+### Running with Docker (Recommended)
+
+This project is fully containerized with Docker. To run it, make sure you have Docker and Docker Compose installed.
+
+1.  **Clone the repository**:
+    ```bash
+    git clone https://github.com/amirhossein-moloki/bookito.git
+    cd bookito
+    ```
+
+2.  **Configure environment variables**:
+    Create a `.env.docker` file by copying the provided template:
+    ```bash
+    cp .env.example.docker .env.docker
+    ```
+    Then, open the `.env.docker` file and fill in your actual secret keys and other configurations.
+
+3.  **Build and run the application**:
+    ```bash
+    docker-compose up --build
+    ```
+    This command will build the Docker images and start the application and database services. The web application will be available at `http://localhost:8000`.
+
+4.  **Stopping the application**:
+    To stop the services, press `CTRL+C` in the terminal where `docker-compose` is running, or run the following command in another terminal:
+    ```bash
+    docker-compose down
+    ```
 
 ---
 
