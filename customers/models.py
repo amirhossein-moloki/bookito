@@ -12,11 +12,18 @@ from Language.models import Language
 from address.models import Address
 
 class Invoice(models.Model):
+    STATUS_CHOICES = (
+        ('processing', 'Processing'),
+        ('shipped', 'Shipped'),
+        ('delivered', 'Delivered'),
+    )
     customer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="invoices")
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
     shipping_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     paid = models.BooleanField(default=False)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='processing')
+
 
     def __str__(self):
         return f"Invoice {self.id} for {self.customer.username}"
