@@ -40,14 +40,24 @@ class AddToCartView(CustomerMixin, APIView):
 
         book_format = get_object_or_404(BookFormat, id=book_format_id)
 
-        if book_format.stock < quantity:
-            return Response({"message": f"Not enough stock for {book_format.book.title} ({book_format.format_name})."}, status=status.HTTP_400_BAD_REQUEST)
+        # Check stock for in-stock items
+        if book_format.status == BookFormat.Status.IN_STOCK:
+            if book_format.stock < quantity:
+                return Response({"message": f"Not enough stock for {book_format.book.title} ({book_format.format_name})."}, status=status.HTTP_400_BAD_REQUEST)
+        # Prevent adding out-of-stock items
+        elif book_format.status == BookFormat.Status.OUT_OF_STOCK:
+            return Response({"message": f"{book_format.book.title} ({book_format.format_name}) is out of stock."}, status=status.HTTP_400_BAD_REQUEST)
+        # Pre-order items can be added regardless of stock
+        elif book_format.status == BookFormat.Status.PRE_ORDER:
+            pass  # No stock check needed for pre-orders
 
         cart, _ = Cart.objects.get_or_create(customer=self.customer, defaults={'is_active': True})
         cart_item, created = CartItem.objects.get_or_create(cart=cart, book_format=book_format, defaults={'quantity': 0})
 
-        if book_format.stock < cart_item.quantity + quantity:
-            return Response({"message": f"Total requested quantity exceeds stock for {book_format.book.title} ({book_format.format_name})."}, status=status.HTTP_400_BAD_REQUEST)
+        # Further stock check for in-stock items already in cart
+        if book_format.status == BookFormat.Status.IN_STOCK:
+            if book_format.stock < cart_item.quantity + quantity:
+                return Response({"message": f"Total requested quantity exceeds stock for {book_format.book.title} ({book_format.format_name})."}, status=status.HTTP_400_BAD_REQUEST)
 
         cart_item.quantity += quantity
         cart_item.save()
@@ -167,6 +177,29 @@ class VerifyPaymentView(CustomerMixin, View):
                 messages.error(request, "سبد خرید شما یافت نشد.")
                 return redirect('cart_detail') # Redirect to a real cart detail URL
 
+            # Create Invoice from Cart
+            invoice = Invoice.objects.create(
+                customer=customer.user,
+                total_price=cart.total_price,
+                shipping_cost=0,  # Or calculate it
+                paid=True
+            )
+
+            for item in cart.items.all():
+                InvoiceItem.objects.create(
+                    invoice=invoice,
+                    book_format=item.book_format,
+                    quantity=item.quantity,
+                    price=item.book_format.price,
+                    is_preorder=(item.book_format.status == BookFormat.Status.PRE_ORDER)
+                )
+                #
+                # Decrease stock for non-pre-order items
+                if item.book_format.status == BookFormat.Status.IN_STOCK:
+                    item.book_format.stock -= item.quantity
+                    item.book_format.save(update_fields=['stock'])
+
+
             # Record discount usage if a discount was applied to the cart
             if cart.discount:
                 cart.discount.record_usage(customer.user)
@@ -175,7 +208,7 @@ class VerifyPaymentView(CustomerMixin, View):
             # For now, we just clear the cart.
             cart.clear()
 
-            messages.success(request, "پرداخت شما با موفقیت انجام شد.")
+            messages.success(request, "پرداخت شما با موفقیت انجام شد و سفارش شما ثبت گردید.")
             return redirect('order_complete') # Redirect to a real order completion URL
         else:
             messages.error(request, "پرداخت ناموفق بود یا توسط شما لغو شد.")

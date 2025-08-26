@@ -5,6 +5,8 @@ from .views import (
     OrderCompleteView, InvoiceListView
 )
 
+app_name = 'customers'
+
 urlpatterns = [
     # Cart API URLs
     path('cart/add/', AddToCartView.as_view(), name='add_to_cart'),

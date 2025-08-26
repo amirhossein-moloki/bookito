@@ -29,7 +29,18 @@ admin.site.register(Book, BookAdmin)
 
 @admin.register(BookFormat)
 class BookFormatAdmin(admin.ModelAdmin):
-    list_display = ('book', 'format_name', 'price', 'stock', 'isbn')
+    list_display = ('book', 'format_name', 'price', 'stock', 'status', 'preorder_end_date', 'isbn')
     search_fields = ('book__title', 'format_name', 'isbn')
-    list_filter = ('format_name',)
+    list_filter = ('format_name', 'status')
     autocomplete_fields = ['book']
+    fieldsets = (
+        (None, {
+            'fields': ('book', 'format_name', 'isbn')
+        }),
+        ('Pricing and Stock', {
+            'fields': ('price', 'discount', 'stock', 'status', 'preorder_end_date')
+        }),
+        ('Physical Attributes', {
+            'fields': ('page_count', 'weight', 'cover_image')
+        }),
+    )

@@ -44,6 +44,9 @@ urlpatterns = [
 
     # URL برای نمایش Redoc
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc-ui'),
+
+    # Dashboard URL
+    path('dashboard/', include('dashboard.urls')),
 ]
 
 # اضافه کردن پیکربندی برای نمایش فایل‌های مدیا
