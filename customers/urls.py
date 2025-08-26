@@ -2,7 +2,7 @@ from django.urls import path
 from .views import (
     AddToCartView, RemoveFromCartView, ClearCartView, CartDetailView,
     ApplyDiscountView, CalculateShippingView, StartPaymentView, VerifyPaymentView,
-    OrderCompleteView, InvoiceListView
+    OrderCompleteView, InvoiceListView, WishlistView, WishlistDestroyView
 )
 
 app_name = 'customers'
@@ -27,4 +27,8 @@ urlpatterns = [
 
     # Invoice
     path('invoice/list/', InvoiceListView.as_view(), name='invoice_list'),
+
+    # Wishlist
+    path('wishlist/', WishlistView.as_view(), name='wishlist-list-create'),
+    path('wishlist/<int:pk>/', WishlistDestroyView.as_view(), name='wishlist-destroy'),
 ]
