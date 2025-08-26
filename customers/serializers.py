@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Invoice, InvoiceItem, Customer, CustomerInterest, Cart, CartItem
+from .models import Invoice, InvoiceItem, Customer, CustomerInterest, Cart, CartItem, Wishlist
 from books.serializers import BookFormatSerializer  # Updated import
 from authors.serializers import AuthorSerializer
 from publishers.serializers import PublisherSerializer
@@ -63,6 +63,15 @@ class CartItemSerializer(serializers.ModelSerializer):
 
     def get_total_price(self, obj):
         return obj.get_total_price()
+
+
+class WishlistSerializer(serializers.ModelSerializer):
+    book_format = BookFormatSerializer(read_only=True)
+    book_format_id = serializers.IntegerField(write_only=True)
+
+    class Meta:
+        model = Wishlist
+        fields = ['id', 'book_format', 'book_format_id', 'added_at']
 
 
 class CartSerializer(serializers.ModelSerializer):

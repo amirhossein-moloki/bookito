@@ -125,3 +125,16 @@ class CartItem(models.Model):
 
     def get_total_price(self):
         return self.book_format.price * self.quantity
+
+
+class Wishlist(models.Model):
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='wishlist_items')
+    book_format = models.ForeignKey(BookFormat, on_delete=models.CASCADE, related_name='wishlisted_by')
+    added_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('customer', 'book_format')
+        ordering = ['-added_at']
+
+    def __str__(self):
+        return f"{self.customer.user.username}'s wishlist: {self.book_format.book.title} ({self.book_format.format_name})"

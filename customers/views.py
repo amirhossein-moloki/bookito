@@ -7,11 +7,11 @@ from django.utils import timezone
 from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status, generics, permissions, serializers
 from books.models import Book, BookFormat
-from .serializers import CartItemSerializer
+from .serializers import CartItemSerializer, WishlistSerializer
 from .utils import calculate_shipping_cost
-from .models import Cart, CartItem, Invoice, Discount, InvoiceItem, Address, Customer
+from .models import Cart, CartItem, Invoice, Discount, InvoiceItem, Address, Customer, Wishlist
 import requests
 
 MERCHANT_ID = getattr(settings, 'ZARINPAL_MERCHANT_ID', None)
@@ -219,3 +219,45 @@ class InvoiceListView(View):
     def get(self, request, *args, **kwargs): pass
 class UpdateInvoiceItemStatusView(APIView):
     def post(self, request, item_id, *args, **kwargs): pass
+
+
+class WishlistView(generics.ListCreateAPIView):
+    serializer_class = WishlistSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        """
+        This view should return a list of all the wishlist items
+        for the currently authenticated user.
+        """
+        customer = get_object_or_404(Customer, user=self.request.user)
+        return Wishlist.objects.filter(customer=customer)
+
+    def perform_create(self, serializer):
+        """
+        Create a new wishlist item.
+        """
+        customer = get_object_or_404(Customer, user=self.request.user)
+        book_format_id = self.request.data.get('book_format_id')
+        book_format = get_object_or_404(BookFormat, id=book_format_id)
+
+        # Check if the item already exists in the wishlist
+        if Wishlist.objects.filter(customer=customer, book_format=book_format).exists():
+            raise serializers.ValidationError({'detail': 'This item is already in your wishlist.'})
+
+        serializer.save(customer=customer, book_format=book_format)
+
+
+class WishlistDestroyView(generics.DestroyAPIView):
+    """
+    View to remove an item from the wishlist.
+    """
+    serializer_class = WishlistSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        """
+        Ensure that users can only delete their own wishlist items.
+        """
+        customer = get_object_or_404(Customer, user=self.request.user)
+        return Wishlist.objects.filter(customer=customer)
