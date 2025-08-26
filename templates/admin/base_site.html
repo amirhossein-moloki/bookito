@@ -1,0 +1,7 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block nav-global %}
+    {{ block.super }}
+    <a href="{% url 'dashboard:dashboard' %}" class="nav-link">{% trans 'Analytics Dashboard' %}</a>
+{% endblock %}

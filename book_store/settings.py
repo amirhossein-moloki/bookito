@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'recommendations',
     'rest_framework',
     'drf_yasg',
+    'dashboard',
 ]
 
 # Middleware

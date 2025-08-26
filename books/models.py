@@ -46,6 +46,11 @@ class Book(models.Model):
 
 
 class BookFormat(models.Model):
+    class Status(models.TextChoices):
+        IN_STOCK = 'in_stock', 'In Stock'
+        OUT_OF_STOCK = 'out_of_stock', 'Out of Stock'
+        PRE_ORDER = 'pre_order', 'Pre-order'
+
     book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='formats', verbose_name="کتاب")
     format_name = models.CharField(max_length=100, verbose_name="نوع فرمت")  # e.g., Hardcover, Paperback, Ebook
 
@@ -56,6 +61,14 @@ class BookFormat(models.Model):
     cover_image = models.ImageField(upload_to='books/covers/', null=True, blank=True, verbose_name="تصویر جلد")
     stock = models.IntegerField(default=0, verbose_name="موجودی")
     discount = models.DecimalField(max_digits=5, decimal_places=0, null=True, blank=True, verbose_name="درصد تخفیف")
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.IN_STOCK,
+        verbose_name="وضعیت"
+    )
+    preorder_end_date = models.DateTimeField(null=True, blank=True, verbose_name="تاریخ پایان پیش‌سفارش")
+
 
     class Meta:
         verbose_name = "فرمت کتاب"

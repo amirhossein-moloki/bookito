@@ -26,6 +26,7 @@ class InvoiceItem(models.Model):
     book_format = models.ForeignKey(BookFormat, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField(default=1)
     price = models.DecimalField(max_digits=10, decimal_places=2)
+    is_preorder = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.quantity} x {self.book_format.book.title} ({self.book_format.format_name})"
