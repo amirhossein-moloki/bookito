@@ -3,6 +3,10 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAdminUser, AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
+from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
+from django.db.models import F
+from django.db.models.functions import Coalesce
+from django.db.models import Value, CharField
 
 from .models import Book, StockNotification
 from .serializers import BookSerializer, StockNotificationSerializer
@@ -65,23 +69,42 @@ class BookViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'], url_path='search')
     def search(self, request):
         """
-        Searches for books by title.
+        Performs a professional, weighted full-text search for books.
+        It searches across title, summary, authors, and genres, and ranks
+        the results by relevance.
         Expects a 'query' query parameter.
         """
         query = request.query_params.get('query', None)
         if not query:
             return Response({"error": "پارامتر جستجو ضروری است."}, status=status.HTTP_400_BAD_REQUEST)
 
-        books = self.get_queryset().filter(title__icontains=query)
+        # Create a search vector with weighted fields
+        vector = (
+            SearchVector('title', weight='A') +
+            SearchVector('summary', weight='B') +
+            SearchVector(Coalesce('authors__first_name', Value('')), weight='C') +
+            SearchVector(Coalesce('authors__last_name', Value('')), weight='C') +
+            SearchVector(Coalesce('genres__name', Value('')), weight='D')
+        )
+
+        # Create a search query
+        search_query = SearchQuery(query, search_type='websearch')
+
+        # Perform the search, annotate with rank, and order by it
+        books = self.get_queryset().annotate(
+            rank=SearchRank(vector, search_query)
+        ).filter(rank__gte=0.1).order_by('-rank')
+
         if not books.exists():
-            return Response({"error": "هیچ کتابی با این نام پیدا نشد."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "هیچ کتابی مطابق با جستجوی شما پیدا نشد."}, status=status.HTTP_404_NOT_FOUND)
 
         page = self.paginate_queryset(books)
         if page is not None:
-            serializer = self.get_serializer(page, many=True)
+            # Pass the context to the serializer
+            serializer = self.get_serializer(page, many=True, context={'request': request})
             return self.get_paginated_response(serializer.data)
 
-        serializer = self.get_serializer(books, many=True)
+        serializer = self.get_serializer(books, many=True, context={'request': request})
         return Response(serializer.data)
 
     @action(detail=False, methods=['get'], url_path='discount')

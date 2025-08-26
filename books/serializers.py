@@ -1,3 +1,4 @@
+import urllib.parse
 from rest_framework import serializers
 from django.db.models import Avg
 from .models import Book, BookFormat, StockNotification
@@ -39,6 +40,9 @@ class BookSerializer(serializers.ModelSerializer):
     average_rating = serializers.SerializerMethodField()
     reviews_count = serializers.SerializerMethodField()
     formats = BookFormatSerializer(many=True, read_only=True)  # Nested serializer
+    share_links = serializers.SerializerMethodField()
+
+    rank = serializers.FloatField(read_only=True)
 
     class Meta:
         model = Book
@@ -56,8 +60,45 @@ class BookSerializer(serializers.ModelSerializer):
             'average_rating',
             'reviews_count',
             'formats',  # Replaced old fields with this nested list
+            'share_links',
+            'rank',
         ]
-        read_only_fields = ['id', 'sold_count', 'average_rating', 'reviews_count']
+        read_only_fields = ['id', 'sold_count', 'average_rating', 'reviews_count', 'share_links', 'rank']
+
+    def to_representation(self, instance):
+        """
+        Dynamically add the 'rank' field to the representation if it exists.
+        """
+        ret = super().to_representation(instance)
+
+        # Check if the instance has the 'rank' attribute (from annotation)
+        if hasattr(instance, 'rank'):
+            ret['rank'] = round(instance.rank, 4)
+        else:
+            # If rank is not present, we can either remove it or set to None
+            # Depending on desired API behavior. Let's remove it if not present.
+            if 'rank' in ret:
+                del ret['rank']
+
+        return ret
+
+    def get_share_links(self, obj):
+        """
+        Generates social media sharing links for the book.
+        """
+        # NOTE: The base URL is a placeholder. The frontend should replace
+        # 'https://example.com' with its actual domain.
+        book_url = f"https://example.com/books/{obj.id}"
+        encoded_url = urllib.parse.quote(book_url)
+
+        text = f"Check out this book: {obj.title}"
+        encoded_text = urllib.parse.quote(text)
+
+        return {
+            'twitter': f"https://twitter.com/intent/tweet?url={encoded_url}&text={encoded_text}",
+            'facebook': f"https://www.facebook.com/sharer/sharer.php?u={encoded_url}",
+            'whatsapp': f"https://api.whatsapp.com/send?text={encoded_text}%20{encoded_url}"
+        }
 
     def get_average_rating(self, obj):
         """
