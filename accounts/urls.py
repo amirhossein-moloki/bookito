@@ -1,7 +1,13 @@
 from django.urls import path
 from .views import *
+from .sms_views import RequestOTPView, VerifyOTPView
 
 urlpatterns = [
+    # New SMS Authentication Endpoints
+    path('sms/request-otp/', RequestOTPView.as_view(), name='request_otp'),
+    path('sms/verify-otp/', VerifyOTPView.as_view(), name='verify_otp'),
+
+    # Existing Email-based Endpoints
     path('register/', RegisterAPIView.as_view(), name='register'),
     path('login/', LoginAPIView.as_view(), name='login'),
     path('logout/',LogoutAPIView.as_view(), name='logout'),
